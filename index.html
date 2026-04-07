@@ -3698,7 +3698,7 @@ function fetchLivePrices(){
       if(!pending){allDone();return;}
       symbols.forEach(function(sym){
         var v8url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range=1d';
-        fetch('/proxy?url='+encodeURIComponent(v8url))
+        fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(v8url))
           .then(function(r){if(!r.ok)throw 0;return r.json();})
           .then(function(d){
             var meta=d&&d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta;
@@ -5256,7 +5256,7 @@ function fetchLiveChainAndRun(){
 function tryProxies(targetUrl){
   // 1st choice: local Python proxy server (works when running serve_wheel.py)
   var localProxy=function(url){
-    return fetch('/proxy?url='+encodeURIComponent(url)).then(function(r){
+    return fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(url)).then(function(r){
       if(!r.ok)throw new Error('local proxy '+r.status);
       return r.json();
     });
