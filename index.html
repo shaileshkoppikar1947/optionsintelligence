@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#00ff88">
-<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
+<head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Options Intelligence</title>
@@ -3701,7 +3698,7 @@ function fetchLivePrices(){
       if(!pending){allDone();return;}
       symbols.forEach(function(sym){
         var v8url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range=1d';
-        fetch('https://corsproxy.io/?url='+encodeURIComponent(v8url))
+        fetch('/proxy?url='+encodeURIComponent(v8url))
           .then(function(r){if(!r.ok)throw 0;return r.json();})
           .then(function(d){
             var meta=d&&d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta;
@@ -5259,7 +5256,7 @@ function fetchLiveChainAndRun(){
 function tryProxies(targetUrl){
   // 1st choice: local Python proxy server (works when running serve_wheel.py)
   var localProxy=function(url){
-    return fetch('https://corsproxy.io/?url='+encodeURIComponent(url)).then(function(r){
+    return fetch('/proxy?url='+encodeURIComponent(url)).then(function(r){
       if(!r.ok)throw new Error('local proxy '+r.status);
       return r.json();
     });
@@ -7108,7 +7105,7 @@ function renderExpiryCalendar(tickers){
     var borderCol=dl!=null&&dl<=3?'rgba(255,92,92,0.3)':dl!=null&&dl<=7?'rgba(245,166,35,0.3)':'var(--border)';
     var showRoll=dl!=null&&dl<=7;
 
-    h.push('<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:var(--r);border:1px solid '+borderCol+'">');
+    h.push('<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--bg3);border-radius:var(--r);border:1px solid '+borderCol+'">');
     // Ticker
     h.push('<div style="min-width:70px"><span style="font-size:15px;font-weight:800;color:var(--text);font-family:DM Mono,monospace">'+item.ticker+'</span>'
       +(showAcct&&item.acctName?'<div style="font-size:9px;color:var(--text3);font-family:DM Mono,monospace;margin-top:1px">'+item.acctName+'</div>':'')
@@ -7116,15 +7113,15 @@ function renderExpiryCalendar(tickers){
     // Type badge
     h.push('<span style="font-size:11px;padding:2px 8px;border-radius:12px;background:'+(item.type==='CALL'?'rgba(0,200,150,0.2)':'rgba(77,166,255,0.2)')+';color:'+(item.type==='CALL'?'var(--green)':'var(--blue)')+';font-weight:700;font-family:DM Mono,monospace">'+item.type+'</span>');
     // Strike + contracts
-    h.push('<span style="font-size:12px;color:var(--text2);font-family:DM Mono,monospace">'+fmt2(item.strike)+' strike · '+item.contracts+'ct</span>');
+    h.push('<span style="font-size:14px;color:var(--text2);font-family:DM Mono,monospace">'+fmt2(item.strike)+' strike · '+item.contracts+'ct</span>');
     // Expiry date
-    if(item.expiry) h.push('<span style="font-size:11px;color:var(--text3);font-family:DM Mono,monospace">'+item.expiry.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'</span>');
+    if(item.expiry) h.push('<span style="font-size:14px;font-weight:700;color:var(--text);font-family:DM Mono,monospace">'+item.expiry.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+'</span>');
     // Live price
-    if(cp>0) h.push('<span style="font-size:12px;font-weight:700;color:var(--text);font-family:DM Mono,monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:6px">'+fmt2(cp)+'</span>');
+    if(cp>0) h.push('<span style="font-size:13px;font-weight:700;color:var(--text);font-family:DM Mono,monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:6px">'+fmt2(cp)+'</span>');
     // ITM/OTM
-    if(itmLabel) h.push('<span style="font-size:11px;font-weight:700;color:'+itmColor+';font-family:DM Mono,monospace">'+itmLabel+'</span>');
+    if(itmLabel) h.push('<span style="font-size:13px;font-weight:800;color:'+itmColor+';font-family:DM Mono,monospace">'+itmLabel+'</span>');
     // Days left — pushed to right
-    h.push('<span style="margin-left:auto;font-size:12px;font-weight:800;color:'+urgColor+';font-family:DM Mono,monospace;white-space:nowrap">'+urgLabel+'</span>');
+    h.push('<span style="margin-left:auto;font-size:15px;font-weight:900;color:'+urgColor+';font-family:DM Mono,monospace;white-space:nowrap">'+urgLabel+'</span>');
     // Roll button
     if(showRoll) h.push('<button onclick="goTab(\'roll\',document.querySelector(\'.nb[onclick*=\\\'roll\\\']\')||document.querySelector(\'.nb[onclick*=\\"roll\\"]\'));setTimeout(function(){var s=$d(\'roll-ticker-select\');if(s){s.value=\''+item.ticker+'\';rollAutoFill();}},100)" style="padding:4px 10px;font-size:11px;background:rgba(245,166,35,0.15);border:1px solid rgba(245,166,35,0.3);border-radius:6px;color:var(--amber);cursor:pointer;font-family:DM Mono,monospace;font-weight:700;white-space:nowrap">Roll →</button>');
     h.push('</div>');
