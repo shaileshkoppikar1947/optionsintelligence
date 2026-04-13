@@ -204,8 +204,9 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div class="lock-icon">📈</div>
     <div class="lock-title" id="lock-title">Options Intelligence</div>
     <div class="lock-sub" id="lock-sub">Enter your password to access your tracker.</div>
-    <div style="font-size:11px;color:#555c66;font-family:'DM Mono',monospace;margin:-14px 0 18px;text-align:center">
-      <span id="lock-url-display" style="font-size:10px;opacity:0.7;word-break:break-all"></span>
+    <div style="font-size:11px;color:#555c66;font-family:'DM Mono',monospace;margin:-14px 0 18px;text-align:center;line-height:1.8">
+      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_v22</span><br/>
+      <span id="lock-url-display" style="font-size:10px;opacity:0.5;word-break:break-all"></span>
       <script>
         (function(){
           var el=document.getElementById('lock-url-display');
@@ -7601,7 +7602,7 @@ function renderDashboard(){
       // NET — big, first
       grid+='<div style="font-size:18px;font-weight:900;color:'+(isCurrent?'var(--amber)':'var(--green)')+';font-family:DM Mono,monospace;line-height:1;margin-bottom:6px">'+fmt(net)+' <span style="font-size:9px;font-weight:600;opacity:0.6">net</span></div>';
       // GROSS — small, second
-      grid+='<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">+'+fmt(gross)+' gross</div>';
+      grid+='<div style="font-size:10px;color:var(--green);font-family:DM Mono,monospace">+'+fmt(gross)+' gross</div>';
       // BUYBACK — small, third (only if exists)
       if(d.out>0){
         grid+='<div style="font-size:10px;color:var(--red);font-family:DM Mono,monospace;margin-top:1px">&#8722;'+fmt(d.out)+' buyback</div>';
