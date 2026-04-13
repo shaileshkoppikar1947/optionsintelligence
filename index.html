@@ -9,7 +9,6 @@
 <meta name="apple-mobile-web-app-title" content="Options Intel"/>
 <meta name="application-name" content="Options Intel"/>
 <meta name="theme-color" content="#0d0f12"/>
-<meta name="description" content="Options wheel strategy tracker"/>
 <link rel="manifest" id="pwa-manifest"/>
 <link rel="apple-touch-icon" id="apple-icon"/>
 <title>Options Intelligence</title>
@@ -183,10 +182,51 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 .chat-suggestions{display:flex;flex-wrap:wrap;gap:6px;padding:10px 14px 0;flex-shrink:0;}
 .chat-sug{padding:4px 10px;font-size:11px;border:1px solid var(--border2);border-radius:20px;background:none;cursor:pointer;color:var(--text3);font-family:DM Mono,monospace;transition:all 0.15s;white-space:nowrap;}
 .chat-sug:hover{color:var(--green);border-color:rgba(0,200,150,0.4);}
+
+/* ── LOCK SCREEN ── */
+#lock-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0d0f12;}
+.lock-box{width:360px;padding:44px 36px;text-align:center;background:#141619;border:1px solid rgba(255,255,255,0.09);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.lock-icon{font-size:42px;margin-bottom:14px;}
+.lock-title{font-family:"Syne",sans-serif;font-size:22px;font-weight:800;margin-bottom:6px;color:#e8eaed;letter-spacing:-0.5px;}
+.lock-sub{font-size:13px;color:#8b9097;margin-bottom:24px;line-height:1.6;}
+.lock-input{width:100%;padding:12px 16px;font-size:15px;letter-spacing:0.1em;border:1.5px solid rgba(255,255,255,0.1);border-radius:8px;background:#0d0f12;color:#e8eaed;font-family:"DM Mono",monospace;outline:none;text-align:center;transition:border-color 0.15s;margin-bottom:12px;}
+.lock-input:focus{border-color:#00c896;}
+.lock-btn{width:100%;padding:13px;font-size:14px;font-weight:700;background:#00c896;color:#0d0f12;border:none;border-radius:8px;cursor:pointer;font-family:"Syne",sans-serif;transition:opacity 0.15s;letter-spacing:0.02em;}
+.lock-btn:hover{opacity:0.88;}
+.lock-err{font-size:12px;color:#ff5c5c;margin-top:10px;min-height:16px;font-family:"DM Mono",monospace;}
+#app{display:none;}
 </style>
 </head>
 <body>
-<!-- PWA Install Banner -->
+
+<div id="lock-screen">
+  <div class="lock-box">
+    <div class="lock-icon">📈</div>
+    <div class="lock-title" id="lock-title">Options Intelligence</div>
+    <div class="lock-sub" id="lock-sub">Enter your password to access your tracker.</div>
+    <div style="font-size:11px;color:#555c66;font-family:'DM Mono',monospace;margin:-14px 0 18px;text-align:center">
+      <span id="lock-url-display" style="font-size:10px;opacity:0.7;word-break:break-all"></span>
+      <script>
+        (function(){
+          var el=document.getElementById('lock-url-display');
+          if(!el)return;
+          var href=window.location.href;
+          if(href.startsWith('file://')){var parts=href.split(/[/\\]/);el.textContent=decodeURIComponent(parts[parts.length-1]);}
+          else{el.textContent=href.replace(/^https?:\/\//,'');}
+        })();
+      </script>
+    </div>
+    <div style="position:relative;margin-bottom:12px">
+      <input type="password" class="lock-input" id="lock-pw" placeholder="Password" style="margin-bottom:0;padding-right:48px" onkeydown="if(event.key==='Enter')lockAction()"/>
+      <button onclick="toggleLockPw()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:#555c66;padding:4px" id="lock-pw-eye" title="Show/hide">👁</button>
+    </div>
+    <input type="password" class="lock-input" id="lock-pw2" placeholder="Confirm password" style="display:none" onkeydown="if(event.key==='Enter')lockAction()"/>
+    <button class="lock-btn" id="lock-action-btn" onclick="lockAction()">Unlock</button>
+    <div class="lock-err" id="lock-err"></div>
+  </div>
+</div>
+
+<div id="app">
 <div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1c1f24;border-top:1px solid rgba(0,200,150,0.3);padding:14px 18px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
   <div style="display:flex;align-items:center;gap:12px;">
     <span style="font-size:26px;">📈</span>
@@ -195,7 +235,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       <div style="font-size:12px;color:#8b9097;">Add to home screen for quick access</div>
     </div>
   </div>
-  <div style="display:flex;gap:8px;">
+  <div style="display:flex;gap:8px;align-items:center;">
     <button onclick="triggerInstall()" style="padding:9px 18px;background:#00c896;color:#0d0f12;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Install</button>
     <button onclick="dismissInstall()" style="padding:9px 14px;background:none;color:#8b9097;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;cursor:pointer;">✕</button>
   </div>
@@ -204,7 +244,6 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     🍎 <strong style="color:#e8eaed;">iPhone:</strong> tap Share → "Add to Home Screen"
   </div>
 </div>
-
 <div class="app">
 <header>
   <div class="logo"><h1>Options Intelligence</h1><span>Premium Tracking · Technicals · Strike Advisor</span></div>
@@ -219,6 +258,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <button class="btn-g" onclick="removeDuplicateTrades()" style="color:var(--amber);border-color:rgba(245,166,35,0.3)" title="Scan all trades and remove exact duplicates (same date, type, strike, contracts, amount)">&#9935; Remove Dupes</button>
 
     <button class="btn-g" onclick="clearAll()" style="color:var(--red);border-color:rgba(255,92,92,0.3)" title="Clear all holdings and trades">&#128465; Clear All</button>
+    <button class="btn-g" onclick="lockOI()" style="color:#00c896;border-color:rgba(0,200,150,0.3)" title="Lock the app">🔒 Lock</button>
 
   </div>
 </header>
@@ -1469,104 +1509,7 @@ function exportWeekSnapshot(){
   h.push('<span>Options Intelligence · Wheel Tracker</span>');
   h.push('<span>Print: Ctrl+P &nbsp;·&nbsp; Save as PDF from print dialog</span>');
   h.push('</div>');
-  h.push('
-<script>
-// ── PWA SETUP ──
-(function(){
-  // Generate inline SVG icon — green chart icon
-  var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="80" fill="#0d0f12"/><polyline points="60,380 160,240 260,300 360,140 450,180" stroke="#00c896" stroke-width="36" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="450" cy="180" r="28" fill="#00c896"/></svg>';
-  var iconUrl = 'data:image/svg+xml,' + encodeURIComponent(iconSvg);
-
-  var appleIcon = document.getElementById('apple-icon');
-  if(appleIcon) appleIcon.href = iconUrl;
-
-  var manifest = {
-    name: 'Options Intelligence',
-    short_name: 'Options Intel',
-    description: 'Options wheel strategy tracker',
-    start_url: window.location.href,
-    display: 'standalone',
-    orientation: 'portrait-primary',
-    background_color: '#0d0f12',
-    theme_color: '#0d0f12',
-    icons: [
-      { src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
-      { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
-    ]
-  };
-  var manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-  var manifestLink = document.getElementById('pwa-manifest');
-  if(manifestLink) manifestLink.href = URL.createObjectURL(manifestBlob);
-
-  // Service Worker
-  if('serviceWorker' in navigator && location.protocol !== 'file:'){
-    var swScript = `
-var CACHE="oi-v1";
-self.addEventListener("install",function(e){self.skipWaiting();});
-self.addEventListener("activate",function(e){
-  e.waitUntil(caches.keys().then(function(keys){
-    return Promise.all(keys.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));
-  }).then(function(){return self.clients.claim();}));
-});
-self.addEventListener("fetch",function(e){
-  if(e.request.method!=="GET")return;
-  e.respondWith(fetch(e.request).then(function(resp){
-    var clone=resp.clone();
-    caches.open(CACHE).then(function(c){c.put(e.request,clone);});
-    return resp;
-  }).catch(function(){return caches.match(e.request);}));
-});
-self.addEventListener("message",function(e){if(e.data&&e.data.type==="SKIP_WAITING")self.skipWaiting();});
-`;
-    try{
-      var swBlob = new Blob([swScript],{type:'application/javascript'});
-      navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(){});
-    }catch(e){}
-  }
-
-  // Install prompt
-  var _deferred = null;
-  window.addEventListener('beforeinstallprompt', function(e){
-    e.preventDefault();
-    _deferred = e;
-    document.getElementById('install-banner').style.display = 'flex';
-  });
-  window.addEventListener('appinstalled', function(){
-    document.getElementById('install-banner').style.display = 'none';
-    _deferred = null;
-  });
-
-  window.triggerInstall = function(){
-    if(_deferred){
-      _deferred.prompt();
-      _deferred.userChoice.then(function(r){
-        if(r.outcome==='accepted') document.getElementById('install-banner').style.display='none';
-        _deferred = null;
-      });
-    } else {
-      document.getElementById('install-fallback').style.display = 'block';
-    }
-  };
-  window.dismissInstall = function(){
-    document.getElementById('install-banner').style.display = 'none';
-    localStorage.setItem('oi_install_dismissed','1');
-  };
-
-  // Don't show if already installed or dismissed
-  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if(isStandalone){ return; }
-  if(localStorage.getItem('oi_install_dismissed')){ return; }
-
-  // Show manual instructions if no prompt fires within 2s
-  setTimeout(function(){
-    if(!_deferred){
-      document.getElementById('install-banner').style.display = 'flex';
-      document.getElementById('install-fallback').style.display = 'block';
-    }
-  }, 2000);
-})();
-</script>
-</body></html>');
+  h.push('</body></html>');
 
   // Open in new tab
   var blob=new Blob([h.join('')],{type:'text/html'});
@@ -8809,6 +8752,93 @@ function formatNewsTime(date){
   if(diff < 86400) return Math.floor(diff/3600)+'h ago';
   return Math.floor(diff/86400)+'d ago';
 }
+
+</script>
+
+</div><!-- /app -->
+<script>
+(function(){
+  var iconSvg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="80" fill="#0d0f12"/><polyline points="60,380 160,240 260,300 360,140 450,180" stroke="#00c896" stroke-width="36" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="450" cy="180" r="28" fill="#00c896"/></svg>';
+  var iconUrl='data:image/svg+xml,'+encodeURIComponent(iconSvg);
+  var ai=document.getElementById('apple-icon'); if(ai) ai.href=iconUrl;
+  var manifest={name:'Options Intelligence',short_name:'Options Intel',description:'Options wheel strategy tracker',start_url:window.location.href,display:'standalone',orientation:'portrait-primary',background_color:'#0d0f12',theme_color:'#0d0f12',icons:[{src:iconUrl,sizes:'192x192',type:'image/svg+xml',purpose:'any maskable'},{src:iconUrl,sizes:'512x512',type:'image/svg+xml',purpose:'any maskable'}]};
+  var ml=document.getElementById('pwa-manifest'); if(ml) ml.href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/json'}));
+  if('serviceWorker' in navigator && location.protocol!=='file:'){
+    var sw='var CACHE="oi-v1";self.addEventListener("install",function(e){self.skipWaiting();});self.addEventListener("activate",function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return x!==CACHE;}).map(function(x){return caches.delete(x);}));}).then(function(){return self.clients.claim();}));});self.addEventListener("fetch",function(e){if(e.request.method!=="GET")return;e.respondWith(fetch(e.request).then(function(r){caches.open(CACHE).then(function(c){c.put(e.request,r.clone());});return r;}).catch(function(){return caches.match(e.request);}));});';
+    try{navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(function(){});}catch(e){}
+  }
+  var _d=null;
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_d=e;document.getElementById('install-banner').style.display='flex';});
+  window.addEventListener('appinstalled',function(){document.getElementById('install-banner').style.display='none';_d=null;});
+  window.triggerInstall=function(){if(_d){_d.prompt();_d.userChoice.then(function(r){if(r.outcome==='accepted')document.getElementById('install-banner').style.display='none';_d=null;});}else{document.getElementById('install-fallback').style.display='block';}};
+  window.dismissInstall=function(){document.getElementById('install-banner').style.display='none';localStorage.setItem('oi_dismissed','1');};
+  if(window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true)return;
+  if(localStorage.getItem('oi_dismissed'))return;
+  setTimeout(function(){if(!_d){document.getElementById('install-banner').style.display='flex';document.getElementById('install-fallback').style.display='block';}},2000);
+})();
+// ── LOCK / PASSWORD ──
+var OI_PW_KEY = 'oi_master_pw';
+var _lockMode = 'unlock';
+
+function hashPw(pw){var h=0;for(var i=0;i<pw.length;i++){h=((h<<5)-h)+pw.charCodeAt(i);h|=0;}return 'oi_'+Math.abs(h).toString(36)+'_'+pw.length;}
+
+function toggleLockPw(){
+  var inp=document.getElementById('lock-pw');
+  var eye=document.getElementById('lock-pw-eye');
+  if(inp.type==='password'){inp.type='text';if(eye)eye.textContent='🙈';}
+  else{inp.type='password';if(eye)eye.textContent='👁';}
+}
+
+function lockAction(){if(_lockMode==='setup')doSetup();else doUnlock();}
+
+function doUnlock(){
+  var pw=document.getElementById('lock-pw').value;
+  var stored=localStorage.getItem(OI_PW_KEY);
+  if(!stored)return;
+  if(hashPw(pw)!==stored){
+    document.getElementById('lock-err').textContent='Incorrect password.';
+    document.getElementById('lock-pw').value='';
+    document.getElementById('lock-pw').focus();
+    return;
+  }
+  showOIApp();
+}
+
+function doSetup(){
+  var pw=document.getElementById('lock-pw').value;
+  var pw2=document.getElementById('lock-pw2').value;
+  if(!pw||pw.length<4){document.getElementById('lock-err').textContent='Min 4 characters.';return;}
+  if(pw!==pw2){document.getElementById('lock-err').textContent='Passwords do not match.';document.getElementById('lock-pw2').value='';document.getElementById('lock-pw2').focus();return;}
+  localStorage.setItem(OI_PW_KEY,hashPw(pw));
+  showOIApp();
+}
+
+function showOIApp(){
+  document.getElementById('lock-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+
+function lockOI(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('lock-screen').style.display='flex';
+  document.getElementById('lock-pw').value='';
+  document.getElementById('lock-err').textContent='';
+}
+
+window.addEventListener('load', function(){
+  var stored=localStorage.getItem(OI_PW_KEY);
+  if(!stored){
+    _lockMode='setup';
+    document.getElementById('lock-title').textContent='Welcome to Options Intelligence';
+    document.getElementById('lock-sub').textContent='Create a password to protect your tracker. Write it down — no recovery.';
+    document.getElementById('lock-pw').placeholder='Create password (min 4 chars)';
+    document.getElementById('lock-pw2').style.display='block';
+    document.getElementById('lock-action-btn').textContent='Create Password';
+  } else {
+    _lockMode='unlock';
+    document.getElementById('lock-pw').focus();
+  }
+});
 
 </script>
 </body>
