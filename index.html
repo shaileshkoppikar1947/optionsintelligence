@@ -2,7 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Options Intel"/>
+<meta name="application-name" content="Options Intel"/>
+<meta name="theme-color" content="#0d0f12"/>
+<meta name="description" content="Options wheel strategy tracker"/>
+<link rel="manifest" id="pwa-manifest"/>
+<link rel="apple-touch-icon" id="apple-icon"/>
 <title>Options Intelligence</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&display=swap" rel="stylesheet"/>
 <style>
@@ -177,6 +186,25 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 </style>
 </head>
 <body>
+<!-- PWA Install Banner -->
+<div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#1c1f24;border-top:1px solid rgba(0,200,150,0.3);padding:14px 18px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:26px;">📈</span>
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#e8eaed;">Install Options Intelligence</div>
+      <div style="font-size:12px;color:#8b9097;">Add to home screen for quick access</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button onclick="triggerInstall()" style="padding:9px 18px;background:#00c896;color:#0d0f12;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Install</button>
+    <button onclick="dismissInstall()" style="padding:9px 14px;background:none;color:#8b9097;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;cursor:pointer;">✕</button>
+  </div>
+  <div id="install-fallback" style="display:none;width:100%;font-size:12px;color:#8b9097;padding-top:6px;">
+    📱 <strong style="color:#e8eaed;">Android:</strong> tap ⋮ menu → "Add to Home screen"<br/>
+    🍎 <strong style="color:#e8eaed;">iPhone:</strong> tap Share → "Add to Home Screen"
+  </div>
+</div>
+
 <div class="app">
 <header>
   <div class="logo"><h1>Options Intelligence</h1><span>Premium Tracking · Technicals · Strike Advisor</span></div>
@@ -1441,7 +1469,104 @@ function exportWeekSnapshot(){
   h.push('<span>Options Intelligence · Wheel Tracker</span>');
   h.push('<span>Print: Ctrl+P &nbsp;·&nbsp; Save as PDF from print dialog</span>');
   h.push('</div>');
-  h.push('</body></html>');
+  h.push('
+<script>
+// ── PWA SETUP ──
+(function(){
+  // Generate inline SVG icon — green chart icon
+  var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="80" fill="#0d0f12"/><polyline points="60,380 160,240 260,300 360,140 450,180" stroke="#00c896" stroke-width="36" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="450" cy="180" r="28" fill="#00c896"/></svg>';
+  var iconUrl = 'data:image/svg+xml,' + encodeURIComponent(iconSvg);
+
+  var appleIcon = document.getElementById('apple-icon');
+  if(appleIcon) appleIcon.href = iconUrl;
+
+  var manifest = {
+    name: 'Options Intelligence',
+    short_name: 'Options Intel',
+    description: 'Options wheel strategy tracker',
+    start_url: window.location.href,
+    display: 'standalone',
+    orientation: 'portrait-primary',
+    background_color: '#0d0f12',
+    theme_color: '#0d0f12',
+    icons: [
+      { src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+    ]
+  };
+  var manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  var manifestLink = document.getElementById('pwa-manifest');
+  if(manifestLink) manifestLink.href = URL.createObjectURL(manifestBlob);
+
+  // Service Worker
+  if('serviceWorker' in navigator && location.protocol !== 'file:'){
+    var swScript = `
+var CACHE="oi-v1";
+self.addEventListener("install",function(e){self.skipWaiting();});
+self.addEventListener("activate",function(e){
+  e.waitUntil(caches.keys().then(function(keys){
+    return Promise.all(keys.filter(function(k){return k!==CACHE;}).map(function(k){return caches.delete(k);}));
+  }).then(function(){return self.clients.claim();}));
+});
+self.addEventListener("fetch",function(e){
+  if(e.request.method!=="GET")return;
+  e.respondWith(fetch(e.request).then(function(resp){
+    var clone=resp.clone();
+    caches.open(CACHE).then(function(c){c.put(e.request,clone);});
+    return resp;
+  }).catch(function(){return caches.match(e.request);}));
+});
+self.addEventListener("message",function(e){if(e.data&&e.data.type==="SKIP_WAITING")self.skipWaiting();});
+`;
+    try{
+      var swBlob = new Blob([swScript],{type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(){});
+    }catch(e){}
+  }
+
+  // Install prompt
+  var _deferred = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    _deferred = e;
+    document.getElementById('install-banner').style.display = 'flex';
+  });
+  window.addEventListener('appinstalled', function(){
+    document.getElementById('install-banner').style.display = 'none';
+    _deferred = null;
+  });
+
+  window.triggerInstall = function(){
+    if(_deferred){
+      _deferred.prompt();
+      _deferred.userChoice.then(function(r){
+        if(r.outcome==='accepted') document.getElementById('install-banner').style.display='none';
+        _deferred = null;
+      });
+    } else {
+      document.getElementById('install-fallback').style.display = 'block';
+    }
+  };
+  window.dismissInstall = function(){
+    document.getElementById('install-banner').style.display = 'none';
+    localStorage.setItem('oi_install_dismissed','1');
+  };
+
+  // Don't show if already installed or dismissed
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if(isStandalone){ return; }
+  if(localStorage.getItem('oi_install_dismissed')){ return; }
+
+  // Show manual instructions if no prompt fires within 2s
+  setTimeout(function(){
+    if(!_deferred){
+      document.getElementById('install-banner').style.display = 'flex';
+      document.getElementById('install-fallback').style.display = 'block';
+    }
+  }, 2000);
+})();
+</script>
+</body></html>');
 
   // Open in new tab
   var blob=new Blob([h.join('')],{type:'text/html'});
