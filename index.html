@@ -7598,10 +7598,13 @@ function renderDashboard(){
     if(gross>0){
       grid+='<div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-bottom:10px;overflow:hidden">';
       grid+='<div style="width:'+barPct+'%;height:100%;background:'+(isCurrent?'var(--amber)':'var(--green)')+';border-radius:2px"></div></div>';
-      grid+='<div style="font-size:18px;font-weight:900;color:'+(isCurrent?'var(--amber)':'var(--green)')+';font-family:DM Mono,monospace;line-height:1;margin-bottom:4px">'+fmt(gross)+'</div>';
+      // NET — big, first
+      grid+='<div style="font-size:18px;font-weight:900;color:'+(isCurrent?'var(--amber)':'var(--green)')+';font-family:DM Mono,monospace;line-height:1;margin-bottom:6px">'+fmt(net)+' <span style="font-size:9px;font-weight:600;opacity:0.6">net</span></div>';
+      // GROSS — small, second
+      grid+='<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">+'+fmt(gross)+' gross</div>';
+      // BUYBACK — small, third (only if exists)
       if(d.out>0){
-        grid+='<div style="font-size:10px;color:var(--red);font-family:DM Mono,monospace">&#8722;'+fmt(d.out)+' out</div>';
-        grid+='<div style="font-size:12px;font-weight:700;color:var(--text2);font-family:DM Mono,monospace;margin-top:2px">'+fmt(net)+' net</div>';
+        grid+='<div style="font-size:10px;color:var(--red);font-family:DM Mono,monospace;margin-top:1px">&#8722;'+fmt(d.out)+' buyback</div>';
       }
       if(clickable) grid+='<div style="font-size:9px;color:var(--text3);font-family:DM Mono,monospace;margin-top:6px;opacity:0.7">&#9662; detail</div>';
     } else if(isFuture){
