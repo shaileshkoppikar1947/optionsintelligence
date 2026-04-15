@@ -259,6 +259,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <button class="btn-g" onclick="removeDuplicateTrades()" style="color:var(--amber);border-color:rgba(245,166,35,0.3)" title="Scan all trades and remove exact duplicates (same date, type, strike, contracts, amount)">&#9935; Remove Dupes</button>
 
     <button class="btn-g" onclick="clearAll()" style="color:var(--red);border-color:rgba(255,92,92,0.3)" title="Clear all holdings and trades">&#128465; Clear All</button>
+    <button class="btn-g" onclick="showQRModal()" style="color:var(--blue);border-color:rgba(77,166,255,0.3)" title="QR code to open on mobile">📱 QR</button>
     <button class="btn-g" onclick="lockOI()" style="color:#00c896;border-color:rgba(0,200,150,0.3)" title="Lock the app">🔒 Lock</button>
 
   </div>
@@ -1340,8 +1341,22 @@ function exportWeekSnapshot(){
   });
 
   var netWk=totIn-totOut;
+  // Also compute per-account totals for net summary
+  var acctInOut={};
+  acctIds&&Object.keys(byAcct).forEach(function(id){
+    var inn=byAcct[id].collected.reduce(function(s,r){return s+r.amount;},0);
+    var out=byAcct[id].closed.reduce(function(s,r){return s+r.amount;},0);
+    acctInOut[id]={inn:inn,out:out,net:inn-out};
+  });
   var acctIds=Object.keys(byAcct).sort(function(a,b){
     return (byAcct[a].name>'ZZZ'?'ZZZ':byAcct[a].name)>(byAcct[b].name>'ZZZ'?'ZZZ':byAcct[b].name)?1:-1;
+  });
+  // Recompute per-account after acctIds defined
+  acctInOut={};
+  acctIds.forEach(function(id){
+    var inn=byAcct[id].collected.reduce(function(s,r){return s+r.amount;},0);
+    var out=byAcct[id].closed.reduce(function(s,r){return s+r.amount;},0);
+    acctInOut[id]={inn:inn,out:out,net:r2(inn-out)};
   });
 
   // Build HTML snapshot
@@ -1416,8 +1431,14 @@ function exportWeekSnapshot(){
         h.push('<td class="dim">'+fmtD(r.date)+'</td>');
         h.push('</tr>');
       });
-      var acctTotal=rows.reduce(function(s,r){return s+r.amount;},0);
-      h.push('<tr><td colspan="5" style="border-top:1px solid rgba(255,255,255,0.1)"></td><td style="border-top:1px solid rgba(255,255,255,0.1)" class="green"><strong>'+fmt2(acctTotal)+'</strong></td><td></td></tr>');
+      var acctGross=rows.reduce(function(s,r){return s+r.amount;},0);
+      var acctBuyback=byAcct[acctId].closed.reduce(function(s,r){return s+r.amount;},0);
+      var acctNet=r2(acctGross-acctBuyback);
+      h.push('<tr><td colspan="5" style="border-top:1px solid rgba(255,255,255,0.1)"></td><td style="border-top:1px solid rgba(255,255,255,0.1)" class="green"><strong>+'+fmt2(acctGross)+' gross</strong></td><td></td></tr>');
+      if(acctBuyback>0){
+        h.push('<tr><td colspan="5"></td><td class="red"><strong>−'+fmt2(acctBuyback)+' buyback</strong></td><td style="font-size:9px;color:#555c66">roll debit</td></tr>');
+        h.push('<tr><td colspan="5"></td><td style="border-top:1px solid rgba(255,255,255,0.1)" class="'+( acctNet>=0?'green':'red')+'"><strong>'+( acctNet>=0?'+':'')+fmt2(acctNet)+' NET</strong></td><td></td></tr>');
+      }
       h.push('</tbody></table>');
     });
     h.push('</div>');
@@ -5018,49 +5039,56 @@ function fetchSPReturn(){
     return (sp&&ep)?{sp:sp,ep:ep}:null;
   }
 
-  // Primary: Yahoo Finance v8 chart (monthly interval, works without CORS issues via local server)
-  var url1='/spychart?period1='+startTs+'&period2='+endTs;
-  fetch(url1)
-    .then(function(r){if(!r.ok)throw 0;return r.json();})
-    .then(function(d){
-      var p=parseChart(d); if(!p)throw 0;
-      applyResult(p.sp,p.ep);
+  // Use stooq.com — reliable CORS-friendly historical data
+  var ticker='SPY';
+  var startD=new Date(startDate+'T00:00:00');
+  var endD=new Date();
+  function pad(n){return String(n).padStart(2,'0');}
+  var stooqStart=startD.getFullYear()+pad(startD.getMonth()+1)+pad(startD.getDate());
+  var stooqEnd=endD.getFullYear()+pad(endD.getMonth()+1)+pad(endD.getDate());
+  var stooqUrl='https://stooq.com/q/d/l/?s=spy.us&d1='+stooqStart+'&d2='+stooqEnd+'&i=m';
+
+  fetch(stooqUrl)
+    .then(function(r){if(!r.ok)throw new Error('stooq fail');return r.text();})
+    .then(function(csv){
+      var lines=csv.trim().split('\n');
+      if(lines.length<3)throw new Error('no data');
+      // CSV: Date,Open,High,Low,Close,Volume — monthly
+      var first=null,last=null;
+      for(var i=1;i<lines.length;i++){
+        var cols=lines[i].split(',');
+        var c=parseFloat(cols[4]); // Close
+        if(!isNaN(c)&&c>0){if(!first)first=c;last=c;}
+      }
+      if(!first||!last)throw new Error('parse fail');
+      applyResult(first,last);
     })
     .catch(function(){
-      // Fallback 1: Yahoo Finance v8 directly (works if CORS allows)
-      var url2='https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1='+startTs+'&period2='+endTs+'&interval=1mo&includeAdjustedClose=true';
-      fetch(url2)
+      // Fallback: known SPY prices table + current price from another source
+      var knownPrices={'2024-01-01':472,'2024-01-02':472,'2024-06-01':530,
+        '2025-01-01':585,'2025-01-02':585,'2023-01-01':382,'2023-01-02':382,
+        '2022-01-01':447,'2022-01-03':447};
+      var sp=knownPrices[startDate]||knownPrices[Object.keys(knownPrices).sort().find(function(k){return k<=startDate;})||''];
+
+      // Try to get current SPY price from another free API
+      fetch('https://query1.finance.yahoo.com/v8/finance/chart/SPY?interval=1d&range=5d')
         .then(function(r){return r.json();})
         .then(function(d){
-          var p=parseChart(d); if(!p)throw 0;
-          applyResult(p.sp,p.ep);
+          var res=d&&d.chart&&d.chart.result&&d.chart.result[0];
+          var closes=res&&res.indicators&&res.indicators.quote&&res.indicators.quote[0]&&res.indicators.quote[0].close;
+          var ep=closes&&closes.filter(Boolean).pop();
+          if(!ep||!sp){onFail('Auto-fetch failed — enter % manually');return;}
+          applyResult(sp,ep);
         })
         .catch(function(){
-          // Fallback 2: query2 Yahoo
-          var url3='https://query2.finance.yahoo.com/v8/finance/chart/SPY?period1='+startTs+'&period2='+endTs+'&interval=1mo&includeAdjustedClose=true';
-          fetch(url3)
-            .then(function(r){return r.json();})
-            .then(function(d){
-              var p=parseChart(d); if(!p)throw 0;
-              applyResult(p.sp,p.ep);
-            })
-            .catch(function(){
-              // Final fallback: use /quotes proxy for current SPY price, estimate from known start prices
-              fetch('/quotes?symbols=SPY')
-                .then(function(r){return r.json();})
-                .then(function(d){
-                  var quotes=d&&d.quoteResponse&&d.quoteResponse.result;
-                  var q=quotes&&quotes[0];
-                  if(!q||!q.regularMarketPrice)throw 0;
-                  var ep=q.regularMarketPrice;
-                  // Known SPY prices for common start dates (approximate adj close)
-                  var knownPrices={'2024-01-01':472,'2024-01-02':472,'2025-01-01':585,'2025-01-02':585,'2023-01-01':382};
-                  var sp=knownPrices[startDate];
-                  if(!sp){onFail('Auto-fetch failed — enter % manually');return;}
-                  applyResult(sp,ep);
-                })
-                .catch(function(){onFail('Auto-fetch failed — enter % manually');});
-            });
+          if(sp){
+            // Last resort: prompt user for current SPY price
+            var cur=prompt('Auto-fetch failed. Enter current SPY price (e.g. 540):');
+            if(cur&&!isNaN(parseFloat(cur))){applyResult(sp,parseFloat(cur));}
+            else{onFail('Auto-fetch failed — enter % manually');}
+          } else {
+            onFail('Auto-fetch failed — enter % manually');
+          }
         });
     });
 }
@@ -8757,6 +8785,56 @@ function formatNewsTime(date){
   return Math.floor(diff/86400)+'d ago';
 }
 
+</script>
+
+
+<!-- QR Modal -->
+<div id="qr-modal" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,0.7);align-items:center;justify-content:center">
+  <div style="background:#1c1f24;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;text-align:center;max-width:320px;width:90%;position:relative">
+    <button onclick="document.getElementById('qr-modal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;color:#8b9097;font-size:20px;cursor:pointer">✕</button>
+    <div style="font-size:15px;font-weight:700;color:#e8eaed;margin-bottom:6px">📱 Open on Mobile</div>
+    <div style="font-size:12px;color:#8b9097;margin-bottom:20px">Scan with your phone camera</div>
+    <div id="qr-canvas-wrap" style="background:#fff;padding:12px;border-radius:8px;display:inline-block;margin-bottom:16px">
+      <canvas id="qr-canvas" width="200" height="200"></canvas>
+    </div>
+    <div id="qr-url-text" style="font-size:10px;color:#555c66;word-break:break-all;margin-top:8px;font-family:'DM Mono',monospace"></div>
+    <div style="font-size:11px;color:#8b9097;margin-top:12px">Same URL — your data stays on this device</div>
+  </div>
+</div>
+
+<script>
+function showQRModal(){
+  var modal = document.getElementById('qr-modal');
+  modal.style.display = 'flex';
+  var url = window.location.href;
+  document.getElementById('qr-url-text').textContent = url;
+  renderQR(url);
+}
+
+function renderQR(text){
+  // QR code renderer — pure JS, no external lib
+  var canvas = document.getElementById('qr-canvas');
+  var ctx = canvas.getContext('2d');
+  // Use Google Charts API to generate QR
+  var img = new Image();
+  var size = 200;
+  img.onload = function(){ ctx.drawImage(img, 0, 0, size, size); };
+  img.onerror = function(){
+    // Fallback: show URL text if image fails
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0,0,size,size);
+    ctx.fillStyle = '#000';
+    ctx.font = '10px monospace';
+    ctx.fillText('Scan failed — use URL below', 10, size/2);
+  };
+  img.crossOrigin = 'anonymous';
+  img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(text);
+}
+
+// Close on backdrop click
+document.getElementById('qr-modal').addEventListener('click', function(e){
+  if(e.target === this) this.style.display = 'none';
+});
 </script>
 
 </div><!-- /app -->
