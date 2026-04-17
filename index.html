@@ -205,7 +205,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div class="lock-title" id="lock-title">Options Intelligence</div>
     <div class="lock-sub" id="lock-sub">Enter your password to access your tracker.</div>
     <div style="font-size:11px;color:#555c66;font-family:'DM Mono',monospace;margin:-14px 0 18px;text-align:center;line-height:1.8">
-      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_v26</span><br/>
+      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_v22</span><br/>
       <span id="lock-url-display" style="font-size:10px;opacity:0.5;word-break:break-all"></span>
       <script>
         (function(){
@@ -3238,21 +3238,31 @@ function fetchTechnicals(ticker, price){
   card.style.display='block';
   card.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">⟳ Fetching RSI &amp; Bollinger Bands for '+ticker+'…</div>';
 
-  // Fetch 60 days of daily OHLCV from Yahoo via allorigins proxy
+  // Fetch 90 days of daily OHLCV from Yahoo via public proxies with fallbacks
   var url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1d&range=90d';
-  var proxy='https://api.allorigins.win/get?url='+encodeURIComponent(url);
-  fetch(proxy)
-    .then(function(r){return r.json();})
-    .then(function(outer){
-      var data=JSON.parse(outer.contents);
-      var result=data&&data.chart&&data.chart.result&&data.chart.result[0];
-      if(!result)throw new Error('No data');
-      var closes=result.indicators.quote[0].close.filter(function(c){return c!=null;});
-      if(closes.length<20)throw new Error('Not enough data');
-      renderTechnicals(ticker,price,closes);
-    })
-    .catch(function(e){
-      card.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">⚠ Could not fetch price data for '+ticker+' ('+e.message+'). Live Prices must be reachable.</div>';
+  function parseChart(d){
+    var result=d&&d.chart&&d.chart.result&&d.chart.result[0];
+    if(!result)throw new Error('No data');
+    var closes=result.indicators.quote[0].close.filter(function(c){return c!=null;});
+    if(closes.length<20)throw new Error('Not enough data');
+    return closes;
+  }
+  // Try corsproxy.io first, then allorigins, then local proxy
+  fetch('https://corsproxy.io/?'+encodeURIComponent(url))
+    .then(function(r){if(!r.ok)throw new Error('corsproxy '+r.status);return r.json();})
+    .then(function(d){renderTechnicals(ticker,price,parseChart(d));})
+    .catch(function(){
+      fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
+        .then(function(r){return r.json();})
+        .then(function(outer){renderTechnicals(ticker,price,parseChart(JSON.parse(outer.contents)));})
+        .catch(function(){
+          fetch('/proxy?url='+encodeURIComponent(url))
+            .then(function(r){if(!r.ok)throw 0;return r.json();})
+            .then(function(d){renderTechnicals(ticker,price,parseChart(d));})
+            .catch(function(e){
+              card.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">⚠ Could not fetch price data for '+ticker+'. Try again in a moment.</div>';
+            });
+        });
     });
 }
 
@@ -3745,40 +3755,69 @@ function fetchLivePrices(){
     }
   }
 
-  // ── Use local server /quotes → Yahoo v8 chart (v7 returns 401, v8 works) ──
+  // ── Fetch prices: try multiple sources with fallbacks ──
   var symParam=encodeURIComponent(symbols.join(','));
 
   function applyQuotes(d){
     var quotes=d&&d.quoteResponse&&d.quoteResponse.result;
-    if(!quotes||!quotes.length)throw 0;
+    if(!quotes||!quotes.length)throw new Error('no quotes');
     quotes.forEach(function(q){
       var price=q.regularMarketPrice||q.regularMarketPreviousClose;
       if(price)applyPrice((q.symbol||'').toUpperCase(),price);
     });
   }
 
-  // Primary: local server /quotes (parallel v8 fetching server-side)
+  function fetchOneSymbolViaChart(sym){
+    // Fetch a single symbol via Yahoo v8 chart through public proxies
+    var v8url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range=1d';
+    var proxies=[
+      function(){return fetch('https://corsproxy.io/?'+encodeURIComponent(v8url)).then(function(r){if(!r.ok)throw 0;return r.json();});},
+      function(){return fetch('https://api.allorigins.win/get?url='+encodeURIComponent(v8url)).then(function(r){return r.json();}).then(function(d){return JSON.parse(d.contents);});},
+      function(){return fetch('/proxy?url='+encodeURIComponent(v8url)).then(function(r){if(!r.ok)throw 0;return r.json();});}
+    ];
+    return proxies.reduce(function(chain,proxy){
+      return chain.catch(function(){return proxy();});
+    }, Promise.reject(new Error('start')))
+    .then(function(d){
+      var meta=d&&d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta;
+      if(meta){
+        var price=meta.regularMarketPrice||meta.previousClose||meta.chartPreviousClose;
+        if(price)applyPrice(sym.toUpperCase(),price);
+      }
+    });
+  }
+
+  function fetchAllViaCharts(){
+    // Fetch each symbol individually via chart endpoint + public proxies
+    var pending=symbols.length, done=0;
+    if(!pending){allDone();return;}
+    symbols.forEach(function(sym){
+      fetchOneSymbolViaChart(sym)
+        .catch(function(){}) // silent fail per symbol
+        .finally(function(){if(++done>=pending)allDone();});
+    });
+  }
+
+  // 1) Try local serve_wheel.py /quotes (batch, fastest when available)
   fetch('/quotes?symbols='+symParam)
     .then(function(r){if(!r.ok)throw 0;return r.json();})
     .then(function(d){applyQuotes(d);allDone();})
     .catch(function(){
-      // Fallback: proxy individual v8 calls through server
-      var pending=symbols.length, done=0;
-      if(!pending){allDone();return;}
-      symbols.forEach(function(sym){
-        var v8url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range=1d';
-        fetch('/proxy?url='+encodeURIComponent(v8url))
-          .then(function(r){if(!r.ok)throw 0;return r.json();})
-          .then(function(d){
-            var meta=d&&d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta;
-            if(meta){
-              var price=meta.regularMarketPrice||meta.previousClose;
-              if(price)applyPrice(sym.toUpperCase(),price);
-            }
-          })
-          .catch(function(){})
-          .finally(function(){if(++done>=pending)allDone();});
-      });
+      // 2) Try Yahoo Finance v7 quote API via corsproxy.io (works on GitHub Pages)
+      var quoteUrl='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+symParam+'&fields=regularMarketPrice,regularMarketPreviousClose';
+      fetch('https://corsproxy.io/?'+encodeURIComponent(quoteUrl))
+        .then(function(r){if(!r.ok)throw 0;return r.json();})
+        .then(function(d){applyQuotes(d);allDone();})
+        .catch(function(){
+          // 3) Try allorigins proxy with v7 quote
+          fetch('https://api.allorigins.win/get?url='+encodeURIComponent(quoteUrl))
+            .then(function(r){return r.json();})
+            .then(function(d){applyQuotes(JSON.parse(d.contents));allDone();})
+            .catch(function(){
+              // 4) Last resort: fetch each symbol individually via v8 chart
+              fetchAllViaCharts();
+            });
+        });
     });
 }
 
