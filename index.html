@@ -6179,19 +6179,18 @@ function cspAddRow(){
   _cspRows.push({id:_cspNextId++,strike:0,contracts:1,premium:0});
   cspRender();
 }
-function cspRemove(id){
-  _cspRows=_cspRows.filter(function(r){return r.id!==id;});
+function cspRemove(idx){
+  _cspRows.splice(idx,1);
   cspRender();
 }
-function cspInc(id){var r=_cspRows.find(function(x){return x.id===id;});if(r){r.contracts++;cspCalcAndRender();}}
-function cspDec(id){var r=_cspRows.find(function(x){return x.id===id;});if(r&&r.contracts>1){r.contracts--;cspCalcAndRender();}}
-function cspUpdate(id,field,val){
-  var row=_cspRows.find(function(r){return r.id===id;});
-  if(row) row[field]=parseFloat(val)||0;
+function cspInc(idx){if(_cspRows[idx]){_cspRows[idx].contracts++;cspCalcAndRender();}}
+function cspDec(idx){if(_cspRows[idx]&&_cspRows[idx].contracts>1){_cspRows[idx].contracts--;cspCalcAndRender();}}
+function cspUpdate(idx,field,val){
+  if(_cspRows[idx]) _cspRows[idx][field]=parseFloat(val)||0;
   cspCalcAndRender();
 }
-function cspUpdateStrike(id,val){cspUpdate(id,'strike',val);}
-function cspUpdatePremium(id,val){cspUpdate(id,'premium',val);}
+function cspUpdateStrike(idx,val){cspUpdate(idx,'strike',val);}
+function cspUpdatePremium(idx,val){cspUpdate(idx,'premium',val);}
 
 // ── Manual row renderer ──
 function cspRender(){
@@ -6209,7 +6208,7 @@ function cspRender(){
     +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:'+(isCall?'var(--green)':'var(--amber)')+';font-family:DM Mono,monospace">'+(isCall?'vs Adj CB':'Cash Needed')+'</div>'
     +'<div></div></div>';
 
-  _cspRows.forEach(function(row){
+  _cspRows.forEach(function(row,rowIdx){
     var premTot=r2(row.premium*row.contracts*100);
     var col5html='';
     if(!isCall){
@@ -6231,16 +6230,16 @@ function cspRender(){
         +'</div>';
     }
     html+='<div style="display:grid;grid-template-columns:110px 90px 90px 100px 1fr 24px;gap:8px;align-items:center;padding:6px 4px;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid var(--border)">';
-    html+='<input type="number" value="'+(row.strike||'')+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspUpdateStrike('+row.id+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<input type="number" value="'+(row.strike||'')+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspUpdateStrike('+rowIdx+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
     html+='<div style="display:flex;align-items:center;gap:4px">'
-      +'<button onclick="cspDec('+row.id+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">−</button>'
+      +'<button onclick="cspDec('+rowIdx+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">−</button>'
       +'<span style="font-size:14px;font-weight:800;color:var(--blue);min-width:22px;text-align:center;font-family:DM Mono,monospace">'+row.contracts+'</span>'
-      +'<button onclick="cspInc('+row.id+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
+      +'<button onclick="cspInc('+rowIdx+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
       +'</div>';
-    html+='<input type="number" value="'+(row.premium||'')+'" placeholder="1.20" step="0.01" oninput="cspUpdatePremium('+row.id+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<input type="number" value="'+(row.premium||'')+'" placeholder="1.20" step="0.01" oninput="cspUpdatePremium('+rowIdx+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
     html+='<div style="font-size:13px;font-weight:700;color:var(--green);font-family:DM Mono,monospace;text-align:right">'+(premTot>0?'+$'+premTot.toFixed(2):'—')+'</div>';
     html+=col5html;
-    html+='<button onclick="cspRemove('+row.id+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;font-family:DM Mono,monospace">✕</button>';
+    html+='<button onclick="cspRemove('+rowIdx+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;font-family:DM Mono,monospace">✕</button>';
     html+='</div>';
   });
 
