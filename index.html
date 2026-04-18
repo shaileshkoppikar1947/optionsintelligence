@@ -6654,22 +6654,19 @@ function optFetchAndRun(){
 }
 
 function optRunOptimizer(forcedExpiry){
-  var res2=$d('opt-results');
-  if(!res2)return;
-  res2.style.display='block';
-  res2.innerHTML='<div style="padding:10px;color:var(--text3);font-family:DM Mono,monospace;font-size:11px">Calculating...</div>';
-  setTimeout(function(){
-    try {
-      _optRunOptimizerCore(forcedExpiry);
-      if(res2.innerHTML.indexOf('Calculating')>=0){
-        res2.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:11px">No results generated. Try entering Adj CB or click Live + Optimize.</div>';
-      }
-    } catch(e){
+  try {
+    _optRunOptimizerCore(forcedExpiry);
+    // Show message if core didn't set any results
+    var res2=$d('opt-results');
+    if(res2&&(res2.style.display==='none'||!res2.innerHTML)){
       res2.style.display='block';
-      res2.innerHTML='<div style="padding:14px 16px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px">Error: '+e.message+'</div></div>';
-      console.error('optRunOptimizer error:',e);
+      res2.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:11px">Enter Adj CB and budget, then click Optimize.</div>';
     }
-  },10);
+  } catch(e){
+    var res2=$d('opt-results');
+    if(res2){res2.style.display='block';res2.innerHTML='<div style="padding:14px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">Error: '+e.message+'</div></div>';}
+    console.error('optRunOptimizer:',e);
+  }
 }
 function _optRunOptimizerCore(forcedExpiry){
   var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
@@ -6990,9 +6987,14 @@ function _optRunOptimizerCore(forcedExpiry){
 
   // Store solutions for "Use" button
   window._optSolutions=top;
-  res.innerHTML=html;
-  res.style.display='block';
-  setTimeout(function(){res.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
+  // Re-query to make sure we have the current DOM element
+  var resNow=$d('opt-results');
+  if(resNow){
+    resNow.innerHTML=html;
+    resNow.style.display='block';
+    setTimeout(function(){resNow.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
+  }
+  if(typeof console!=='undefined') console.log('OPT DONE: html='+html.length+' res='+(resNow?'found':'NULL'));
 }
 
 function optUseSolution(rank){
