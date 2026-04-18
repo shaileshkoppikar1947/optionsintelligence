@@ -6743,12 +6743,10 @@ function _optRunOptimizerCore(forcedExpiry){
     }
     strikes.forEach(function(strike){
       var otmPct=liveP>0?(isCall?r2((strike-liveP)/liveP*100):r2((liveP-strike)/liveP*100)):5;
-      var ivD=baseIV/100,dte=7,tY=dte/365,sqT=Math.sqrt(tY);
-      var d1=(Math.log(liveP/strike)+0.5*ivD*ivD*tY)/(ivD*sqT);
-      var nCDF=function(x){var t=1/(1+0.2316419*Math.abs(x));var y=1-((((1.330274429*t-1.821255978)*t+1.781477937)*t-0.356563782)*t+0.319381530)*t*Math.exp(-x*x/2)/2.506628;return x>=0?y:1-y;};
-      var delta=Math.abs(nCDF(d1)-( isCall?0:1));
-      var ext=liveP*ivD*sqT*0.4*Math.abs(delta);
+      // Simple premium estimate: IV-based without Black-Scholes
+      var dte=7,ivWeekly=baseIV/100/Math.sqrt(52);
       var intr=isCall?Math.max(0,liveP-strike):Math.max(0,strike-liveP);
+      var ext=r2(strike*ivWeekly*0.4); // time value estimate
       var mid=r2(Math.max(0.05,intr+ext));
       var maxCt=isCall?Math.floor((sharesHeld||9999)/100):Math.floor(budget/(strike*100));
       if(maxCt<1)return;
