@@ -456,7 +456,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Ticker</div>
-          <input id="opt-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase();optBudgetPresets()" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
+          <input id="opt-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase();optBudgetPresets();if($d('opt-budget').value)optRunOptimizer();" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
         </div>
         <div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Budget ($)</div>
@@ -6140,9 +6140,10 @@ function cspSetMode(mode){
       ? '<strong style="color:var(--blue)">Cash-Secured Put:</strong> Sell puts and hold cash to buy shares if assigned. The optimizer finds the best strike combination for your budget to lower your adjusted cost basis.'
       : '<strong style="color:var(--green)">Covered Call:</strong> Sell calls against shares you already own. The optimizer finds the best strikes above your adj CB to maximize premium while protecting your position.';
   }
-  _cspRows = mode==='put'
-    ? [{id:_cspNextId++,strike:45,contracts:5,premium:1.91},{id:_cspNextId++,strike:43,contracts:5,premium:1.13},{id:_cspNextId++,strike:41,contracts:5,premium:0.67}]
-    : [{id:_cspNextId++,strike:50,contracts:5,premium:1.20},{id:_cspNextId++,strike:52,contracts:3,premium:0.85},{id:_cspNextId++,strike:55,contracts:2,premium:0.50}];
+  // Start with 3 blank rows — user enters their own strikes
+  _cspRows = [{id:_cspNextId++,strike:0,contracts:1,premium:0},
+              {id:_cspNextId++,strike:0,contracts:1,premium:0},
+              {id:_cspNextId++,strike:0,contracts:1,premium:0}];
   if(_cspLivePrice>0) cspLoadExpiry();
   cspRender();
 }
@@ -6576,16 +6577,17 @@ function cspUseStrike(strike,mid){
 // ══ SMART BUDGET OPTIMIZER ══
 function optBudgetPresets(){
   var optTk=$d('opt-ticker'),cspTk=$d('csp-ticker');
-  if(optTk&&optTk.value&&cspTk&&!cspTk.value) cspTk.value=optTk.value;
-  // Auto-fill adjCB from holdings if empty
   var tk=(optTk&&optTk.value||'').toUpperCase();
+  // Sync ticker to manual builder
+  if(tk&&cspTk&&!cspTk.value) cspTk.value=tk;
+  // Auto-fill adjCB and price from holdings
   if(tk){
     var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
     if(hk){
       var h=HOLDINGS[hk];
       var oac=$d('opt-adj-cb');
-      if(oac&&!oac.value){var adj=h.adjCB!=null?h.adjCB:(h.origCB||0);if(adj>0)oac.value=adj;}
-      // Also sync live price if available
+      var adj=h.adjCB!=null?h.adjCB:(h.origCB||0);
+      if(oac&&!oac.value&&adj>0) oac.value=adj;
       if(h.currentPrice&&h.currentPrice>0) _cspLivePrice=h.currentPrice;
     }
   }
@@ -6593,14 +6595,13 @@ function optBudgetPresets(){
 
 function optSetBudget(amount){
   var el=$d('opt-budget');
-  if(el) el.value=amount;
+  if(el) el.value=String(amount);
   optBudgetPresets();
-  // Highlight active button
-  document.querySelectorAll('#csp-calc-card .prem-tk-btn').forEach(function(b){b.classList.remove('active');});
-  // Auto-run optimizer
   optRunOptimizer();
-  // Scroll results into view
-  setTimeout(function(){var r=$d('opt-results');if(r&&r.style.display!=='none')r.scrollIntoView({behavior:'smooth',block:'nearest'});},100);
+  setTimeout(function(){
+    var r=$d('opt-results');
+    if(r&&r.style.display!=='none') r.scrollIntoView({behavior:'smooth',block:'nearest'});
+  },150);
 }
 
 function optFetchAndRun(){
@@ -6649,6 +6650,14 @@ function optFetchAndRun(){
 }
 
 function optRunOptimizer(forcedExpiry){
+  var res2=$d('opt-results');
+  if(res2){res2.style.display='block';res2.innerHTML='<div style="padding:10px;color:var(--text3);font-family:DM Mono,monospace;font-size:11px">⟳ Calculating...</div>';}
+  try { _optRunOptimizerCore(forcedExpiry); } catch(e){
+    if(res2){res2.style.display='block';res2.innerHTML='<div style="padding:14px 16px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px">Optimizer Error</div><div style="font-size:11px;color:var(--text2)">'+e.message+'</div></div>';}
+    console.error('optRunOptimizer error:', e);
+  }
+}
+function _optRunOptimizerCore(forcedExpiry){
   var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
   var st=$d('opt-status');if(st)st.innerHTML='';  // clear any previous status
   var tk=($d('opt-ticker')&&$d('opt-ticker').value||'').toUpperCase()||_cspTicker||'';
@@ -6660,13 +6669,14 @@ function optRunOptimizer(forcedExpiry){
 
   if(!budget){res.style.display='none';res.innerHTML='';return;}
 
-  // Auto-fill adjCB/shares from holdings if not set
-  if(tk&&(!adjCB||(!sharesHeld&&isCall))){
+  // Auto-fill adjCB/shares/price from holdings
+  if(tk){
     var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
     if(hk){
       var hld=HOLDINGS[hk];
-      if(!adjCB) adjCB=hld.adjCB!=null?hld.adjCB:(hld.origCB||0);
+      if(!adjCB){adjCB=hld.adjCB!=null?hld.adjCB:(hld.origCB||0);}
       if(!sharesHeld) sharesHeld=hld.shares||0;
+      if(!_cspLivePrice&&hld.currentPrice>0) _cspLivePrice=hld.currentPrice;
       if(adjCB&&$d('opt-adj-cb')&&!$d('opt-adj-cb').value){$d('opt-adj-cb').value=adjCB;}
       if(sharesHeld&&$d('opt-shares-held')&&!$d('opt-shares-held').value){$d('opt-shares-held').value=sharesHeld;}
     }
@@ -6704,7 +6714,23 @@ function optRunOptimizer(forcedExpiry){
     if(hk2) liveP=HOLDINGS[hk2].currentPrice||0;
   }
   // Still no price — estimate from adj CB (user likely selling near their CB)
-  if(!liveP&&adjCB>0) liveP=adjCB*1.05; // assume stock ~5% above adj CB as reference
+  if(!liveP&&adjCB>0) liveP=adjCB*1.05;
+  // Last resort: try origCB from holdings as price proxy
+  if(!liveP&&tk){
+    var hk3=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk3){var h3=HOLDINGS[hk3];liveP=h3.currentPrice||h3.adjCB||h3.origCB||0;if(liveP>0&&!adjCB)adjCB=h3.adjCB||h3.origCB||0;}
+  }
+  // If still no price, show helpful prompt
+  if(!liveP){
+    res.style.display='block';
+    res.innerHTML='<div style="padding:14px 16px;background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:var(--r);font-family:DM Mono,monospace">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:8px">Enter Adj CB to optimize</div>'
+      +'<div style="font-size:11px;color:var(--text2);line-height:1.8">No stock price found for <strong>'+(tk||'this ticker')+'</strong>. The optimizer needs a reference price to generate strikes.<br><br>'
+      +'<strong>Option 1:</strong> Enter your Adj CB / sh above — optimizer estimates strikes around it.<br>'
+      +'<strong>Option 2:</strong> Click <strong>⚡ Live + Optimize</strong> to fetch real options chain data.</div>'
+      +'</div>';
+    return;
+  }
   if(!candidates.length && liveP>0){
     // Estimate from IV if no live chain — generate synthetic strikes
     var baseIV=60; // default 60% IV estimate
@@ -6954,7 +6980,6 @@ function optRunOptimizer(forcedExpiry){
   window._optSolutions=top;
   res.innerHTML=html;
   res.style.display='block';
-  // Scroll results into view
   setTimeout(function(){res.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
 }
 
