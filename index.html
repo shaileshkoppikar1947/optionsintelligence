@@ -205,7 +205,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div class="lock-title" id="lock-title">Options Intelligence</div>
     <div class="lock-sub" id="lock-sub">Enter your password to access your tracker.</div>
     <div style="font-size:11px;color:#555c66;font-family:'DM Mono',monospace;margin:-14px 0 18px;text-align:center;line-height:1.8">
-      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_v22</span><br/>
+      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_fixed2.html</span><br/>
       <span id="lock-url-display" style="font-size:10px;opacity:0.5;word-break:break-all"></span>
       <script>
         (function(){
@@ -456,7 +456,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Ticker</div>
-          <input id="opt-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase()" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
+          <input id="opt-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase();optBudgetPresets()" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
         </div>
         <div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Budget ($)</div>
@@ -485,12 +485,12 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       <!-- Quick budget presets -->
       <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Quick:</span>
-        <button onclick="$d('opt-budget').value=5000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$5K</button>
-        <button onclick="$d('opt-budget').value=10000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$10K</button>
-        <button onclick="$d('opt-budget').value=25000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$25K</button>
-        <button onclick="$d('opt-budget').value=50000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$50K</button>
-        <button onclick="$d('opt-budget').value=60000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$60K</button>
-        <button onclick="$d('opt-budget').value=100000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$100K</button>
+        <button onclick="optSetBudget(5000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$5K</button>
+        <button onclick="optSetBudget(10000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$10K</button>
+        <button onclick="optSetBudget(25000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$25K</button>
+        <button onclick="optSetBudget(50000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$50K</button>
+        <button onclick="optSetBudget(60000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$60K</button>
+        <button onclick="optSetBudget(100000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$100K</button>
         <span id="opt-status" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-left:4px"></span>
       </div>
       <!-- Optimizer results -->
@@ -6575,9 +6575,32 @@ function cspUseStrike(strike,mid){
 
 // ══ SMART BUDGET OPTIMIZER ══
 function optBudgetPresets(){
-  // Sync ticker between optimizer and manual builder
   var optTk=$d('opt-ticker'),cspTk=$d('csp-ticker');
   if(optTk&&optTk.value&&cspTk&&!cspTk.value) cspTk.value=optTk.value;
+  // Auto-fill adjCB from holdings if empty
+  var tk=(optTk&&optTk.value||'').toUpperCase();
+  if(tk){
+    var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk){
+      var h=HOLDINGS[hk];
+      var oac=$d('opt-adj-cb');
+      if(oac&&!oac.value){var adj=h.adjCB!=null?h.adjCB:(h.origCB||0);if(adj>0)oac.value=adj;}
+      // Also sync live price if available
+      if(h.currentPrice&&h.currentPrice>0) _cspLivePrice=h.currentPrice;
+    }
+  }
+}
+
+function optSetBudget(amount){
+  var el=$d('opt-budget');
+  if(el) el.value=amount;
+  optBudgetPresets();
+  // Highlight active button
+  document.querySelectorAll('#csp-calc-card .prem-tk-btn').forEach(function(b){b.classList.remove('active');});
+  // Auto-run optimizer
+  optRunOptimizer();
+  // Scroll results into view
+  setTimeout(function(){var r=$d('opt-results');if(r&&r.style.display!=='none')r.scrollIntoView({behavior:'smooth',block:'nearest'});},100);
 }
 
 function optFetchAndRun(){
@@ -6627,6 +6650,7 @@ function optFetchAndRun(){
 
 function optRunOptimizer(forcedExpiry){
   var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
+  var st=$d('opt-status');if(st)st.innerHTML='';  // clear any previous status
   var tk=($d('opt-ticker')&&$d('opt-ticker').value||'').toUpperCase()||_cspTicker||'';
   var adjCB=parseFloat(($d('opt-adj-cb')&&$d('opt-adj-cb').value)||0)||0;
   var sharesHeld=parseFloat(($d('opt-shares-held')&&$d('opt-shares-held').value)||0)||0;
@@ -6708,7 +6732,11 @@ function optRunOptimizer(forcedExpiry){
 
   if(!candidates.length){
     res.style.display='block';
-    res.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:12px">⚠ Enter a ticker with a live price, or click ⚡ Live + Optimize to load real chain data.</div>';
+    res.innerHTML='<div style="padding:14px 16px;background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:var(--r);font-family:DM Mono,monospace">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px">No price data for '+tk+'</div>'
+      +'<div style="font-size:11px;color:var(--text2);line-height:1.7">To optimize without live data: enter your <strong>Adj CB</strong> above — the optimizer will estimate strikes around it.<br>'
+      +'Or click <strong>⚡ Live + Optimize</strong> to fetch real options chain data.</div>'
+      +'</div>';
     return;
   }
 
@@ -6926,6 +6954,8 @@ function optRunOptimizer(forcedExpiry){
   window._optSolutions=top;
   res.innerHTML=html;
   res.style.display='block';
+  // Scroll results into view
+  setTimeout(function(){res.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
 }
 
 function optUseSolution(rank){
