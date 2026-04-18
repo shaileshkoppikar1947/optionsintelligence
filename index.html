@@ -6140,7 +6140,7 @@ function cspSetMode(mode){
       ? '<strong style="color:var(--blue)">Cash-Secured Put:</strong> Sell puts and hold cash to buy shares if assigned. The optimizer finds the best strike combination for your budget to lower your adjusted cost basis.'
       : '<strong style="color:var(--green)">Covered Call:</strong> Sell calls against shares you already own. The optimizer finds the best strikes above your adj CB to maximize premium while protecting your position.';
   }
-  // Start blank - user enters their own strikes
+  // Blank rows - user enters their own strikes
   _cspRows = [{id:_cspNextId++,strike:0,contracts:1,premium:0},{id:_cspNextId++,strike:0,contracts:1,premium:0},{id:_cspNextId++,strike:0,contracts:1,premium:0}];
   if(_cspLivePrice>0) cspLoadExpiry();
   cspRender();
@@ -6164,17 +6164,17 @@ function cspGetAdjCB(){
 }
 
 function cspReset(){
-  _cspLivePrice=0; _cspTicker=''; _optLiveChain={};
+  _cspLivePrice=0; _cspTicker='';
   var er=$d('csp-expiry-row');if(er)er.style.display='none';
   var st=$d('csp-chain-status');if(st)st.textContent='';
   var tk=$d('csp-ticker');if(tk)tk.value='';
+  var sh=$d('csp-shares-held');if(sh)sh.value='';
+  var ac=$d('csp-adj-cb');if(ac)ac.value='';
+  var mac=$d('csp-manual-adjcb');if(mac)mac.value='';
   var otk=$d('opt-ticker');if(otk)otk.value='';
   var ob=$d('opt-budget');if(ob)ob.value='';
   var oac=$d('opt-adj-cb');if(oac)oac.value='';
   var ores=$d('opt-results');if(ores){ores.style.display='none';ores.innerHTML='';}
-  var sh=$d('csp-shares-held');if(sh)sh.value='';
-  var ac=$d('csp-adj-cb');if(ac)ac.value='';
-  var mac=$d('csp-manual-adjcb');if(mac)mac.value='';
   cspSetMode(_cspMode);
 }
 
@@ -6235,9 +6235,9 @@ function cspRender(){
     html+='<div style="display:grid;grid-template-columns:110px 90px 90px 100px 1fr 24px;gap:8px;align-items:center;padding:6px 4px;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid var(--border)">';
     html+='<input type="number" value="'+(row.strike||'')+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspUpdate('+row.id+',\'strike\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
     html+='<div style="display:flex;align-items:center;gap:4px">'
-      +'<button onclick="cspDec('+rowIdx+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">-</button>'
+      +'<button onclick="var r=_cspRows.find(function(x){return x.id==='+row.id+'});if(r&&r.contracts>1){r.contracts--;cspCalcAndRender();}" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">-</button>'
       +'<span style="font-size:14px;font-weight:800;color:var(--blue);min-width:22px;text-align:center;font-family:DM Mono,monospace">'+row.contracts+'</span>'
-      +'<button onclick="cspInc('+rowIdx+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
+      +'<button onclick="var r=_cspRows.find(function(x){return x.id==='+row.id+'});if(r){r.contracts++;cspCalcAndRender();}" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
       +'</div>';
     html+='<input type="number" value="'+(row.premium||'')+'" placeholder="1.20" step="0.01" oninput="cspUpdate('+row.id+',\'premium\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
     html+='<div style="font-size:13px;font-weight:700;color:var(--green);font-family:DM Mono,monospace;text-align:right">'+(premTot>0?'+$'+premTot.toFixed(2):'-')+'</div>';
@@ -6629,6 +6629,20 @@ function optFetchAndRun(){
 }
 
 function optRunOptimizer(forcedExpiry){
+  try {
+    _optRunOptimizerCore(forcedExpiry);
+    var res2=$d('opt-results');
+    if(res2&&(res2.style.display==='none'||!res2.innerHTML)){
+      res2.style.display='block';
+      res2.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:11px">Enter ticker + Adj CB above, then Optimize. Or type strikes in the manual builder below.</div>';
+    }
+  } catch(e){
+    var res2=$d('opt-results');
+    if(res2){res2.style.display='block';res2.innerHTML='<div style="padding:14px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red)">Error: '+e.message+'</div></div>';}
+    console.error('optRunOptimizer:',e);
+  }
+}
+function _optRunOptimizerCore(forcedExpiry){
   var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
   var tk=($d('opt-ticker')&&$d('opt-ticker').value||'').toUpperCase()||_cspTicker||'';
   var adjCB=parseFloat(($d('opt-adj-cb')&&$d('opt-adj-cb').value)||0)||0;
@@ -6677,6 +6691,18 @@ function optRunOptimizer(forcedExpiry){
     });
   }
 
+  // Market-closed fallbacks for liveP
+  if(!liveP&&tk&&typeof PRICE_CACHE!=='undefined'&&PRICE_CACHE[tk]>0) liveP=PRICE_CACHE[tk];
+  if(!liveP&&tk){
+    var hk2=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk2) liveP=HOLDINGS[hk2].currentPrice||0;
+  }
+  if(!liveP&&adjCB>0) liveP=adjCB*1.05;
+  if(!liveP&&tk){
+    var hk3=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk3){var h3=HOLDINGS[hk3];liveP=h3.currentPrice||h3.adjCB||h3.origCB||0;if(liveP>0&&!adjCB){adjCB=h3.adjCB||h3.origCB||0;var oac3=$d('opt-adj-cb');if(oac3&&!oac3.value&&adjCB>0)oac3.value=adjCB;}}
+  }
+
   if(!candidates.length && liveP>0){
     // Estimate from IV if no live chain - generate synthetic strikes
     var baseIV=60; // default 60% IV estimate
@@ -6689,13 +6715,9 @@ function optRunOptimizer(forcedExpiry){
     }
     strikes.forEach(function(strike){
       var otmPct=liveP>0?(isCall?r2((strike-liveP)/liveP*100):r2((liveP-strike)/liveP*100)):5;
-      var ivD=baseIV/100,dte=7,tY=dte/365,sqT=Math.sqrt(tY);
-      var d1=(Math.log(liveP/strike)+0.5*ivD*ivD*tY)/(ivD*sqT);
-  var nCDF=function(CDF(x){var t=1/(1+0.2316419*Math.abs(x));var y=1-((((1.330274429*t-1.821255978)*t+1.781477937)*t-0.356563782)*t+0.319381530)*t*Math.exp(-x*x/2)/2.506628;return x>=0?y:1-y;}
-      var delta=Math.abs(nCDF(d1)-( isCall?0:1));
-      var ext=liveP*ivD*sqT*0.4*Math.abs(delta);
+      var ivWeekly=baseIV/100/Math.sqrt(52);
       var intr=isCall?Math.max(0,liveP-strike):Math.max(0,strike-liveP);
-      var mid=r2(Math.max(0.05,intr+ext));
+      var mid=r2(Math.max(0.05,intr+strike*ivWeekly*0.4));
       var maxCt=isCall?Math.floor((sharesHeld||9999)/100):Math.floor(budget/(strike*100));
       if(maxCt<1)return;
       candidates.push({strike:strike,premium:mid,iv:baseIV,otmPct:otmPct,maxContracts:maxCt,live:false});
@@ -6920,8 +6942,8 @@ function optRunOptimizer(forcedExpiry){
 
   // Store solutions for "Use" button
   window._optSolutions=top;
-  var resNow=$d('opt-results');
-  if(resNow){resNow.innerHTML=html;resNow.style.display='block';}
+  res.innerHTML=html;
+  res.style.display='block';
 }
 
 function optUseSolution(rank){
