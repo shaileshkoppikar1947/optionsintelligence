@@ -3623,7 +3623,7 @@ function runAdvisor(){
   var under=adjCB>price;
   var premCollected=r2((origCB-adjCB)*shares); // total premium already collected
 
-  function nCDF(x){var t=1/(1+0.3275911*Math.abs(x));var y=1-(((((1.061405429*t-1.453152027)*t+1.421413741)*t-0.284496736)*t+0.254829592)*t)*Math.exp(-x*x);return x>=0?y:1-y;}
+  var nCDF=function(x){var t=1/(1+0.3275911*Math.abs(x));var y=1-(((((1.061405429*t-1.453152027)*t+1.421413741)*t-0.284496736)*t+0.254829592)*t)*Math.exp(-x*x);return x>=0?y:1-y;};
   function prem(K,call){var d1=(Math.log(price/K)+0.5*ivD*ivD*tY)/(ivD*sqT);var delta=call?nCDF(d1):nCDF(d1)-1;var ext=price*ivD*sqT*0.4*Math.abs(delta);var intr=call?Math.max(0,price-K):Math.max(0,K-price);return Math.max(r2(intr+ext),0.01);}
   function aRisk(K,call){var d=call?(K-price)/price*100:(price-K)/price*100;if(d<=0)return call?90:85;if(d>25)return 5;return Math.round(Math.max(5,call?80-d*3:75-d*3));}
 
@@ -6183,8 +6183,8 @@ function cspRemove(idx){
   _cspRows.splice(idx,1);
   cspRender();
 }
-function cspInc(idx){if(_cspRows[idx]){_cspRows[idx].contracts++;cspCalcAndRender();}}
-function cspDec(idx){if(_cspRows[idx]&&_cspRows[idx].contracts>1){_cspRows[idx].contracts--;cspCalcAndRender();}}
+function cspInc(idx){if(_cspRows[idx]){_cspRows[idx].contracts++;cspRender();}}
+function cspDec(idx){if(_cspRows[idx]&&_cspRows[idx].contracts>1){_cspRows[idx].contracts--;cspRender();}}
 function cspUpdate(idx,field,val){
   if(_cspRows[idx]) _cspRows[idx][field]=parseFloat(val)||0;
   cspCalcAndRender();
@@ -6695,7 +6695,7 @@ function optRunOptimizer(forcedExpiry){
       var otmPct=liveP>0?(isCall?r2((strike-liveP)/liveP*100):r2((liveP-strike)/liveP*100)):5;
       var ivD=baseIV/100,dte=7,tY=dte/365,sqT=Math.sqrt(tY);
       var d1=(Math.log(liveP/strike)+0.5*ivD*ivD*tY)/(ivD*sqT);
-      function nCDF(x){var t=1/(1+0.2316419*Math.abs(x));var y=1-((((1.330274429*t-1.821255978)*t+1.781477937)*t-0.356563782)*t+0.319381530)*t*Math.exp(-x*x/2)/2.506628;return x>=0?y:1-y;}
+      var nCDF=function(x){var t=1/(1+0.2316419*Math.abs(x));var y=1-((((1.330274429*t-1.821255978)*t+1.781477937)*t-0.356563782)*t+0.319381530)*t*Math.exp(-x*x/2)/2.506628;return x>=0?y:1-y;};
       var delta=Math.abs(nCDF(d1)-( isCall?0:1));
       var ext=liveP*ivD*sqT*0.4*Math.abs(delta);
       var intr=isCall?Math.max(0,liveP-strike):Math.max(0,strike-liveP);
