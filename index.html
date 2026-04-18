@@ -440,6 +440,105 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div id="income-result"></div>
   </div>
 
+  <!-- Options Strategy Calculator (CSP + CC) -->
+  <div class="card" style="margin-top:14px" id="csp-calc-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div class="sl" style="margin-bottom:0">📊 Options Strategy Calculator</div>
+      <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden">
+        <button id="csp-mode-put" onclick="cspSetMode('put')" style="padding:6px 16px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:DM Mono,monospace;background:var(--blue-d);color:var(--blue)">📉 Cash-Secured Put</button>
+        <button id="csp-mode-call" onclick="cspSetMode('call')" style="padding:6px 16px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:DM Mono,monospace;background:transparent;color:var(--text3)">📈 Covered Call</button>
+      </div>
+    </div>
+
+    <!-- ── Smart Budget Optimizer ── -->
+    <div style="background:var(--bg3);border:1px solid rgba(0,200,150,0.25);border-radius:var(--r);padding:14px 16px;margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em;font-family:DM Mono,monospace;margin-bottom:10px">⚡ Smart Budget Optimizer — Auto-build the best strike combination</div>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Ticker</div>
+          <input id="opt-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase()" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Budget ($)</div>
+          <input id="opt-budget" type="number" placeholder="10000" step="1000" style="width:110px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="optBudgetPresets()"/>
+        </div>
+        <div id="opt-adjcb-wrap">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Adj CB / sh <span style="color:var(--green)">(optional)</span></div>
+          <input id="opt-adj-cb" type="number" placeholder="e.g. 32.40" step="0.01" style="width:110px;padding:7px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="optBudgetPresets()"/>
+        </div>
+        <div id="opt-shares-wrap" style="display:none">
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Shares Held</div>
+          <input id="opt-shares-held" type="number" placeholder="700" step="100" style="width:90px;padding:7px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="optBudgetPresets()"/>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Goal</div>
+          <select id="opt-goal" onchange="optBudgetPresets()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none">
+            <option value="lower_cb">Lower adj CB most</option>
+            <option value="max_premium">Max premium $</option>
+            <option value="max_contracts">Max contracts</option>
+            <option value="safest">Safest (most OTM)</option>
+          </select>
+        </div>
+        <button onclick="optRunOptimizer()" id="opt-run-btn" style="padding:7px 20px;font-size:13px;font-weight:700;background:var(--green);color:#000;border:none;border-radius:var(--r);cursor:pointer;font-family:Syne,sans-serif;white-space:nowrap">▶ Optimize</button>
+        <button onclick="optFetchAndRun()" id="opt-live-btn" style="padding:7px 16px;font-size:12px;font-weight:700;background:var(--blue-d);border:1px solid rgba(77,166,255,0.4);border-radius:var(--r);color:var(--blue);cursor:pointer;font-family:DM Mono,monospace;white-space:nowrap">⚡ Live + Optimize</button>
+      </div>
+      <!-- Quick budget presets -->
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Quick:</span>
+        <button onclick="$d('opt-budget').value=5000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$5K</button>
+        <button onclick="$d('opt-budget').value=10000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$10K</button>
+        <button onclick="$d('opt-budget').value=25000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$25K</button>
+        <button onclick="$d('opt-budget').value=50000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$50K</button>
+        <button onclick="$d('opt-budget').value=60000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$60K</button>
+        <button onclick="$d('opt-budget').value=100000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$100K</button>
+        <span id="opt-status" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-left:4px"></span>
+      </div>
+      <!-- Optimizer results -->
+      <div id="opt-results" style="display:none;margin-top:12px"></div>
+    </div>
+
+    <!-- ── Manual Builder ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;font-family:DM Mono,monospace">Manual Strike Builder</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="csp-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase()" style="width:75px;padding:5px 8px;font-size:12px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
+        <div id="csp-shares-wrap" style="display:none;align-items:center;gap:4px">
+          <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Shares:</span>
+          <input id="csp-shares-held" type="number" placeholder="700" step="100" style="width:75px;padding:5px 8px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="cspCalcAndRender()"/>
+        </div>
+        <div id="csp-adjcb-wrap" style="display:none;align-items:center;gap:4px">
+          <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Adj CB:</span>
+          <input id="csp-adj-cb" type="number" placeholder="32.40" step="0.01" style="width:80px;padding:5px 8px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="cspCalcAndRender()"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Adj CB:</span>
+          <input id="csp-manual-adjcb" type="number" placeholder="e.g. 32.40" step="0.01" style="width:90px;padding:5px 8px;font-size:12px;border:1px solid rgba(0,200,150,0.4);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="cspCalcAndRender()" title="Your current adjusted cost basis — affects how many contracts make sense and whether strikes are above/below your break-even"/>
+        </div>
+        <button onclick="cspFetchChain()" id="csp-fetch-btn" style="padding:5px 12px;font-size:11px;font-weight:700;background:var(--blue-d);border:1px solid rgba(77,166,255,0.4);border-radius:var(--r);color:var(--blue);cursor:pointer;font-family:DM Mono,monospace;white-space:nowrap">⚡ Live Chain</button>
+        <span id="csp-chain-status" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace"></span>
+        <button onclick="cspAddRow()" style="padding:5px 12px;font-size:11px;font-weight:700;background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.3);border-radius:var(--r);color:var(--green);cursor:pointer;font-family:DM Mono,monospace">+ Strike</button>
+        <button onclick="cspReset()" style="padding:5px 8px;font-size:10px;background:none;border:1px solid var(--border2);border-radius:var(--r);color:var(--text3);cursor:pointer;font-family:DM Mono,monospace">Reset</button>
+      </div>
+    </div>
+
+    <div id="csp-desc" style="font-size:11px;color:var(--text2);font-family:DM Mono,monospace;margin-bottom:12px;padding:8px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);line-height:1.7"></div>
+
+    <!-- Live chain -->
+    <div id="csp-expiry-row" style="display:none;margin-bottom:12px;padding:10px 14px;background:var(--bg3);border:1px solid rgba(77,166,255,0.2);border-radius:var(--r)">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:10px;font-weight:700;color:var(--blue);font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:0.06em">Expiry:</span>
+        <select id="csp-expiry-sel" onchange="cspLoadExpiry()" style="padding:6px 10px;font-size:12px;border:1px solid rgba(77,166,255,0.3);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;min-width:160px"></select>
+        <span id="csp-live-price-badge" style="font-size:12px;font-weight:700;color:var(--green);font-family:DM Mono,monospace"></span>
+        <span id="csp-chain-click-hint" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace"></span>
+      </div>
+      <div id="csp-chain-table" style="margin-top:10px;max-height:220px;overflow-y:auto"></div>
+    </div>
+
+    <!-- Strike rows -->
+    <div id="csp-rows" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px"></div>
+    <div id="csp-results" style="display:none"></div>
+  </div>
+
   <!-- Premium Scout -->
   <div class="card" style="margin-top:14px">
     <div class="sl">🔭 Premium Scout — Wheel Candidates</div>
@@ -3238,7 +3337,7 @@ function fetchTechnicals(ticker, price){
   card.style.display='block';
   card.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">⟳ Fetching RSI &amp; Bollinger Bands for '+ticker+'…</div>';
 
-  // Fetch 90 days of daily OHLCV from Yahoo via public proxies with fallbacks
+  // Fetch 90 days OHLCV via public proxies with fallbacks
   var url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1d&range=90d';
   function parseChart(d){
     var result=d&&d.chart&&d.chart.result&&d.chart.result[0];
@@ -3247,20 +3346,19 @@ function fetchTechnicals(ticker, price){
     if(closes.length<20)throw new Error('Not enough data');
     return closes;
   }
-  // Try corsproxy.io first, then allorigins, then local proxy
   fetch('https://corsproxy.io/?'+encodeURIComponent(url))
-    .then(function(r){if(!r.ok)throw new Error('corsproxy '+r.status);return r.json();})
+    .then(function(r){if(!r.ok)throw 0;return r.json();})
     .then(function(d){renderTechnicals(ticker,price,parseChart(d));})
     .catch(function(){
       fetch('https://api.allorigins.win/get?url='+encodeURIComponent(url))
         .then(function(r){return r.json();})
-        .then(function(outer){renderTechnicals(ticker,price,parseChart(JSON.parse(outer.contents)));})
+        .then(function(o){renderTechnicals(ticker,price,parseChart(JSON.parse(o.contents)));})
         .catch(function(){
           fetch('/proxy?url='+encodeURIComponent(url))
             .then(function(r){if(!r.ok)throw 0;return r.json();})
             .then(function(d){renderTechnicals(ticker,price,parseChart(d));})
-            .catch(function(e){
-              card.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">⚠ Could not fetch price data for '+ticker+'. Try again in a moment.</div>';
+            .catch(function(){
+              card.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">⚠ Could not fetch chart data for '+ticker+'. Try again in a moment.</div>';
             });
         });
     });
@@ -3768,7 +3866,6 @@ function fetchLivePrices(){
   }
 
   function fetchOneSymbolViaChart(sym){
-    // Fetch a single symbol via Yahoo v8 chart through public proxies
     var v8url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(sym)+'?interval=1d&range=1d';
     var proxies=[
       function(){return fetch('https://corsproxy.io/?'+encodeURIComponent(v8url)).then(function(r){if(!r.ok)throw 0;return r.json();});},
@@ -3777,7 +3874,7 @@ function fetchLivePrices(){
     ];
     return proxies.reduce(function(chain,proxy){
       return chain.catch(function(){return proxy();});
-    }, Promise.reject(new Error('start')))
+    },Promise.reject(new Error('start')))
     .then(function(d){
       var meta=d&&d.chart&&d.chart.result&&d.chart.result[0]&&d.chart.result[0].meta;
       if(meta){
@@ -3788,33 +3885,30 @@ function fetchLivePrices(){
   }
 
   function fetchAllViaCharts(){
-    // Fetch each symbol individually via chart endpoint + public proxies
-    var pending=symbols.length, done=0;
+    var pending=symbols.length,done=0;
     if(!pending){allDone();return;}
     symbols.forEach(function(sym){
-      fetchOneSymbolViaChart(sym)
-        .catch(function(){}) // silent fail per symbol
-        .finally(function(){if(++done>=pending)allDone();});
+      fetchOneSymbolViaChart(sym).catch(function(){}).finally(function(){if(++done>=pending)allDone();});
     });
   }
 
-  // 1) Try local serve_wheel.py /quotes (batch, fastest when available)
+  // 1) Local serve_wheel.py (fastest, batch)
   fetch('/quotes?symbols='+symParam)
     .then(function(r){if(!r.ok)throw 0;return r.json();})
     .then(function(d){applyQuotes(d);allDone();})
     .catch(function(){
-      // 2) Try Yahoo Finance v7 quote API via corsproxy.io (works on GitHub Pages)
+      // 2) Yahoo v7 quote via corsproxy.io (works on GitHub Pages)
       var quoteUrl='https://query1.finance.yahoo.com/v7/finance/quote?symbols='+symParam+'&fields=regularMarketPrice,regularMarketPreviousClose';
       fetch('https://corsproxy.io/?'+encodeURIComponent(quoteUrl))
         .then(function(r){if(!r.ok)throw 0;return r.json();})
         .then(function(d){applyQuotes(d);allDone();})
         .catch(function(){
-          // 3) Try allorigins proxy with v7 quote
+          // 3) allorigins proxy with v7 quote
           fetch('https://api.allorigins.win/get?url='+encodeURIComponent(quoteUrl))
             .then(function(r){return r.json();})
             .then(function(d){applyQuotes(JSON.parse(d.contents));allDone();})
             .catch(function(){
-              // 4) Last resort: fetch each symbol individually via v8 chart
+              // 4) Per-symbol v8 chart via public proxies
               fetchAllViaCharts();
             });
         });
@@ -6017,6 +6111,833 @@ function scoreToGrade(score){
   if(score>=40)return 'D';
   return 'F';
 }
+
+// ══ OPTIONS STRATEGY CALCULATOR (CSP + CC) ══
+var _cspRows = [];
+var _cspNextId = 1;
+var _cspLivePrice = 0;
+var _cspTicker = '';
+var _cspMode = 'put';
+var _optLiveChain = {}; // cached puts/calls by expiry for optimizer
+
+// ── Mode toggle ──
+function cspSetMode(mode){
+  _cspMode = mode;
+  var putBtn=$d('csp-mode-put'), callBtn=$d('csp-mode-call');
+  if(putBtn){putBtn.style.background=mode==='put'?'var(--blue-d)':'transparent';putBtn.style.color=mode==='put'?'var(--blue)':'var(--text3)';}
+  if(callBtn){callBtn.style.background=mode==='call'?'rgba(0,200,150,0.15)':'transparent';callBtn.style.color=mode==='call'?'var(--green)':'var(--text3)';}
+  var sw=$d('csp-shares-wrap'),aw=$d('csp-adjcb-wrap'),osw=$d('opt-shares-wrap'),oaw=$d('opt-adjcb-wrap');
+  if(sw)sw.style.display=mode==='call'?'flex':'none';
+  if(aw)aw.style.display=mode==='call'?'flex':'none';
+  if(osw)osw.style.display=mode==='call'?'block':'none';
+  // Show adj CB in optimizer for both modes
+  if(oaw)oaw.style.display='block';
+  var tk=($d('csp-ticker')&&$d('csp-ticker').value)||_cspTicker||'';
+  if(tk&&mode==='call') cspAutoFillFromHoldings(tk);
+  var desc=$d('csp-desc');
+  if(desc){
+    desc.innerHTML = mode==='put'
+      ? '<strong style="color:var(--blue)">Cash-Secured Put:</strong> Sell puts and hold cash to buy shares if assigned. The optimizer finds the best strike combination for your budget to lower your adjusted cost basis.'
+      : '<strong style="color:var(--green)">Covered Call:</strong> Sell calls against shares you already own. The optimizer finds the best strikes above your adj CB to maximize premium while protecting your position.';
+  }
+  _cspRows = mode==='put'
+    ? [{id:_cspNextId++,strike:45,contracts:5,premium:1.91},{id:_cspNextId++,strike:43,contracts:5,premium:1.13},{id:_cspNextId++,strike:41,contracts:5,premium:0.67}]
+    : [{id:_cspNextId++,strike:50,contracts:5,premium:1.20},{id:_cspNextId++,strike:52,contracts:3,premium:0.85},{id:_cspNextId++,strike:55,contracts:2,premium:0.50}];
+  if(_cspLivePrice>0) cspLoadExpiry();
+  cspRender();
+}
+
+function cspAutoFillFromHoldings(tk){
+  var key=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+  if(!key) return;
+  var h=HOLDINGS[key];
+  var sh=$d('csp-shares-held'); if(sh&&h.shares>0) sh.value=h.shares;
+  var ac=$d('csp-adj-cb'); if(ac){var adj=h.adjCB!=null?h.adjCB:(h.origCB||0);if(adj>0)ac.value=adj;}
+  var oac=$d('opt-adj-cb'); if(oac){var adj2=h.adjCB!=null?h.adjCB:(h.origCB||0);if(adj2>0)oac.value=adj2;}
+  var osh=$d('opt-shares-held'); if(osh&&h.shares>0) osh.value=h.shares;
+}
+
+function cspGetAdjCB(){
+  // Check manual adj CB first (always visible), then mode-specific
+  var manual=parseFloat(($d('csp-manual-adjcb')&&$d('csp-manual-adjcb').value)||0)||0;
+  if(manual>0) return manual;
+  return parseFloat(($d('csp-adj-cb')&&$d('csp-adj-cb').value)||0)||0;
+}
+
+function cspReset(){
+  _cspLivePrice=0; _cspTicker='';
+  var er=$d('csp-expiry-row');if(er)er.style.display='none';
+  var st=$d('csp-chain-status');if(st)st.textContent='';
+  var tk=$d('csp-ticker');if(tk)tk.value='';
+  var sh=$d('csp-shares-held');if(sh)sh.value='';
+  var ac=$d('csp-adj-cb');if(ac)ac.value='';
+  var mac=$d('csp-manual-adjcb');if(mac)mac.value='';
+  cspSetMode(_cspMode);
+}
+
+function cspAddRow(){
+  _cspRows.push({id:_cspNextId++,strike:0,contracts:1,premium:0});
+  cspRender();
+}
+function cspRemove(id){
+  _cspRows=_cspRows.filter(function(r){return r.id!==id;});
+  cspRender();
+}
+function cspUpdate(id,field,val){
+  var row=_cspRows.find(function(r){return r.id===id;});
+  if(row) row[field]=parseFloat(val)||0;
+  cspCalcAndRender();
+}
+
+// ── Manual row renderer ──
+function cspRender(){
+  var wrap=$d('csp-rows');if(!wrap)return;
+  var isCall=_cspMode==='call';
+  var adjCB=cspGetAdjCB();
+  var html='';
+
+  // Header
+  html+='<div style="display:grid;grid-template-columns:110px 90px 90px 100px 1fr 24px;gap:8px;padding:0 4px 6px;border-bottom:1px solid var(--border)">'
+    +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);font-family:DM Mono,monospace">Strike $</div>'
+    +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);font-family:DM Mono,monospace">Contracts</div>'
+    +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);font-family:DM Mono,monospace">Premium/sh</div>'
+    +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--green);font-family:DM Mono,monospace">Premium $</div>'
+    +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:'+(isCall?'var(--green)':'var(--amber)')+';font-family:DM Mono,monospace">'+(isCall?'vs Adj CB':'Cash Needed')+'</div>'
+    +'<div></div></div>';
+
+  _cspRows.forEach(function(row){
+    var premTot=r2(row.premium*row.contracts*100);
+    var col5html='';
+    if(!isCall){
+      var cashNeeded=r2(row.strike*row.contracts*100);
+      var effCB=row.strike>0&&row.premium>0?r2(row.strike-row.premium):null;
+      col5html='<div style="font-family:DM Mono,monospace">'
+        +'<div style="font-size:13px;font-weight:700;color:var(--amber)">$'+cashNeeded.toLocaleString('en-US',{minimumFractionDigits:2})+'</div>'
+        +(effCB!==null?'<div style="font-size:10px;color:var(--text3)">eff CB $'+effCB.toFixed(2)+'/sh</div>':'')
+        +'</div>';
+    } else {
+      var aboveCB=adjCB>0&&row.strike>=adjCB;
+      var pnlPerSh=adjCB>0?r2(row.strike-adjCB):null;
+      var pnlTotal=pnlPerSh!==null?r2(pnlPerSh*row.contracts*100+premTot):null;
+      var itm=_cspLivePrice>0&&row.strike<=_cspLivePrice;
+      col5html='<div style="font-family:DM Mono,monospace">'
+        +(adjCB>0?'<div style="font-size:11px;font-weight:700;color:'+(aboveCB?'var(--green)':'var(--red)')+'">'+( aboveCB?'✅ ':'⚠ ')+(pnlPerSh!==null?(pnlPerSh>=0?'+':'')+('$'+pnlPerSh.toFixed(2)+'/sh'):'—')+(aboveCB?' above CB':' below CB')+'</div>':'')
+        +(pnlTotal!==null?'<div style="font-size:10px;color:var(--text3)">total '+(pnlTotal>=0?'+':'')+('$'+Math.round(pnlTotal).toLocaleString())+'</div>':'')
+        +(itm?'<div style="font-size:9px;color:var(--red);font-weight:700">⚠ ITM now</div>':'')
+        +'</div>';
+    }
+    html+='<div style="display:grid;grid-template-columns:110px 90px 90px 100px 1fr 24px;gap:8px;align-items:center;padding:6px 4px;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid var(--border)">';
+    html+='<input type="number" value="'+(row.strike||'')+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspUpdate('+row.id+',\'strike\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<div style="display:flex;align-items:center;gap:4px">'
+      +'<button onclick="var r=_cspRows.find(function(x){return x.id==='+row.id+'});if(r&&r.contracts>1){r.contracts--;cspCalcAndRender();}" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">−</button>'
+      +'<span style="font-size:14px;font-weight:800;color:var(--blue);min-width:22px;text-align:center;font-family:DM Mono,monospace">'+row.contracts+'</span>'
+      +'<button onclick="var r=_cspRows.find(function(x){return x.id==='+row.id+'});if(r){r.contracts++;cspCalcAndRender();}" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
+      +'</div>';
+    html+='<input type="number" value="'+(row.premium||'')+'" placeholder="1.20" step="0.01" oninput="cspUpdate('+row.id+',\'premium\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<div style="font-size:13px;font-weight:700;color:var(--green);font-family:DM Mono,monospace;text-align:right">'+(premTot>0?'+$'+premTot.toFixed(2):'—')+'</div>';
+    html+=col5html;
+    html+='<button onclick="cspRemove('+row.id+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;font-family:DM Mono,monospace">✕</button>';
+    html+='</div>';
+  });
+
+  wrap.innerHTML=html;
+  cspCalcAndRender();
+}
+
+// ── Main calc & results renderer ──
+function cspCalcAndRender(){
+  var res=$d('csp-results');if(!res)return;
+  var isCall=_cspMode==='call';
+  var rows=_cspRows.filter(function(r){return r.strike>0;});
+  if(!rows.length){res.style.display='none';return;}
+
+  var totalPrem=0,totalContracts=0,totalShares=0;
+  rows.forEach(function(r){totalPrem=r2(totalPrem+r.premium*r.contracts*100);totalContracts+=r.contracts;totalShares+=r.contracts*100;});
+
+  var adjCB=cspGetAdjCB();
+  var sharesHeld=parseFloat(($d('csp-shares-held')&&$d('csp-shares-held').value)||0)||0;
+  var tk=($d('csp-ticker')&&$d('csp-ticker').value)||_cspTicker||'';
+
+  // Auto-fill from holdings
+  if(tk&&(!adjCB||!sharesHeld)&&isCall){
+    var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk){var hld=HOLDINGS[hk];if(!adjCB)adjCB=hld.adjCB!=null?hld.adjCB:(hld.origCB||0);if(!sharesHeld)sharesHeld=hld.shares||0;}
+  }
+
+  function sCard(label,val,sub,color,tip){
+    var te=(tip||'').replace(/'/g,"&#39;");
+    return '<div style="background:var(--bg3);border-radius:var(--r);padding:14px 16px;border:1px solid var(--border);position:relative">'
+      +(tip?'<span onmouseenter="showFixedTip(event,\''+te+'\')" onmouseleave="hideFixedTip()" style="position:absolute;top:8px;right:10px;display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.1);color:var(--text3);font-size:9px;cursor:help;font-weight:700">?</span>':'')
+      +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:5px">'+label+'</div>'
+      +'<div style="font-size:20px;font-weight:800;color:'+(color||'var(--text)')+';font-family:DM Mono,monospace">'+val+'</div>'
+      +(sub?'<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-top:4px">'+sub+'</div>':'')
+      +'</div>';
+  }
+
+  var sumHTML='',breakdownHTML='',whatIfHTML='',contextHTML='';
+
+  if(isCall){
+    // ── COVERED CALL ──
+    var totalCallable=0;
+    rows.forEach(function(r){totalCallable=r2(totalCallable+r.strike*r.contracts*100);});
+    var blendedStrike=r2(totalCallable/totalShares);
+    var premYield=sharesHeld>0&&adjCB>0?r2(totalPrem/(sharesHeld*adjCB)*100):0;
+    var totalPnL=0;
+    rows.forEach(function(r){
+      var pnlPerSh=adjCB>0?r2(r.strike-adjCB):0;
+      totalPnL=r2(totalPnL+pnlPerSh*r.contracts*100+r.premium*r.contracts*100);
+    });
+    var callPct=adjCB>0?r2((blendedStrike-adjCB)/adjCB*100):null;
+    var allAboveCB=adjCB>0&&rows.every(function(r){return r.strike>=adjCB;});
+
+    sumHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:14px">';
+    sumHTML+=sCard('Total Premium','+$'+totalPrem.toFixed(2),totalContracts+' contracts · '+totalShares+' shares covered','var(--green)','Cash you collect upfront. Yours to keep whether or not shares get called away.');
+    sumHTML+=sCard('Blended Strike','$'+blendedStrike.toFixed(2)+'/sh',callPct!==null?(callPct>=0?'+'+callPct.toFixed(1)+'% above adj CB':callPct.toFixed(1)+'% — BELOW adj CB!'):'Enter adj CB',callPct!==null&&callPct>=0?'var(--green)':'var(--red)','Weighted average strike. If all calls assigned, you sell all covered shares at this price.');
+    if(adjCB>0) sumHTML+=sCard('P&L if All Assigned',(totalPnL>=0?'+':'')+('$'+Math.round(totalPnL).toLocaleString()),'premium + (strike − adj CB) × shares',totalPnL>=0?'var(--green)':'var(--red)','Total profit if every call gets assigned: premium plus share gain from adj CB to strike.');
+    if(premYield>0) sumHTML+=sCard('Yield on Position',premYield.toFixed(2)+'%','premium ÷ (shares × adj CB)',premYield>=1?'var(--green)':'var(--amber)','Premium as a percentage of your position value.');
+    if(sharesHeld>0){var rem=sharesHeld-totalShares;sumHTML+=sCard('Shares Remaining',Math.max(0,rem).toLocaleString(),rem<0?'⚠ Over-selling!':'of '+sharesHeld.toLocaleString()+' held',rem<0?'var(--red)':'var(--text2)','Shares NOT covered after selling these calls.');}
+    sumHTML+=sCard('Contracts Sold',totalContracts+' total',totalShares+' shares covered','var(--blue)','');
+    sumHTML+='</div>';
+
+    // Breakdown table
+    breakdownHTML='<div style="overflow-x:auto;margin-bottom:14px"><table style="width:100%;border-collapse:collapse;font-family:DM Mono,monospace;font-size:12px">';
+    breakdownHTML+='<thead><tr style="background:var(--bg3);border-bottom:1px solid var(--border)">'
+      +'<th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase">Strike</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase">Contracts</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase">Shares</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--green);text-transform:uppercase">Premium</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase">vs Adj CB</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase">P&L if Called</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase">OTM%</th>'
+      +'</tr></thead><tbody>';
+    rows.forEach(function(r,i){
+      var prem=r2(r.premium*r.contracts*100);
+      var pnlPerSh=adjCB>0?r2(r.strike-adjCB):null;
+      var pnlTotal=pnlPerSh!==null?r2(pnlPerSh*r.contracts*100+prem):null;
+      var aboveCB=adjCB>0&&r.strike>=adjCB;
+      var otm=_cspLivePrice>0?r2((r.strike-_cspLivePrice)/_cspLivePrice*100):null;
+      var itm=_cspLivePrice>0&&r.strike<=_cspLivePrice;
+      breakdownHTML+='<tr style="background:'+(i%2===0?'transparent':'rgba(255,255,255,0.015)')+';border-bottom:1px solid rgba(255,255,255,0.04)">'
+        +'<td style="padding:9px 12px;font-weight:800;color:var(--text);font-size:14px">$'+parseFloat(r.strike).toFixed(2)+(itm?'<span style="margin-left:6px;font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,92,92,0.2);color:var(--red)">ITM</span>':'')+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:var(--blue);font-weight:700">'+r.contracts+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:var(--text2)">'+r.contracts*100+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:var(--green);font-weight:700">+$'+prem.toFixed(2)+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:'+(adjCB>0?(aboveCB?'var(--green)':'var(--red)'):'var(--text3)')+';font-weight:700">'+(adjCB>0?(aboveCB?'+':'')+('$'+r2(r.strike-adjCB).toFixed(2)+'/sh'):'—')+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:'+(pnlTotal!==null?(pnlTotal>=0?'var(--green)':'var(--red)'):'var(--text3)')+';font-weight:700">'+(pnlTotal!==null?(pnlTotal>=0?'+':'')+('$'+Math.round(Math.abs(pnlTotal)).toLocaleString()):'—')+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:'+(otm===null?'var(--text3)':itm?'var(--red)':otm<3?'var(--amber)':'var(--green)')+'">'+(otm===null?'—':(otm>=0?'+':'')+otm.toFixed(1)+'%')+'</td>'
+        +'</tr>';
+    });
+    breakdownHTML+='<tr style="border-top:2px solid var(--border);background:rgba(0,200,150,0.04)">'
+      +'<td style="padding:10px 12px;font-weight:800;color:var(--text)">TOTAL / BLENDED</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--blue);font-weight:800">'+totalContracts+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--text2);font-weight:700">'+totalShares+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--green);font-weight:800">+$'+totalPrem.toFixed(2)+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:'+(adjCB>0?(rows.every(function(r){return r.strike>=adjCB;})?'var(--green)':'var(--red)'):'var(--text3)')+';font-weight:700">'+(adjCB>0?'$'+blendedStrike.toFixed(2)+' blended':'—')+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:'+(adjCB>0?(totalPnL>=0?'var(--green)':'var(--red)'):'var(--text3)')+';font-weight:800">'+(adjCB>0?(totalPnL>=0?'+':'')+('$'+Math.round(Math.abs(totalPnL)).toLocaleString()):'—')+'</td>'
+      +'<td></td></tr>';
+    breakdownHTML+='</tbody></table></div>';
+
+    // What-if (CC)
+    if(_cspLivePrice>0){
+      var prices=[_cspLivePrice*0.80,_cspLivePrice*0.90,_cspLivePrice*0.95,_cspLivePrice,_cspLivePrice*1.05,_cspLivePrice*1.10,_cspLivePrice*1.20];
+      whatIfHTML='<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:10px">📈 What Happens at Expiry — Stock at...</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">';
+      prices.forEach(function(sp){
+        sp=Math.round(sp*100)/100;
+        var pnl=totalPrem,calledCount=0;
+        rows.forEach(function(r){
+          if(sp>=r.strike){calledCount++;if(adjCB>0)pnl=r2(pnl+(r.strike-adjCB)*r.contracts*100);}
+          else{if(adjCB>0)pnl=r2(pnl+(sp-adjCB)*r.contracts*100);}
+        });
+        var pct=r2((sp-_cspLivePrice)/_cspLivePrice*100);
+        var bg=calledCount===rows.length?'rgba(77,166,255,0.07)':(pnl>=0?'rgba(0,200,150,0.07)':'rgba(255,92,92,0.07)');
+        var border=calledCount===rows.length?'rgba(77,166,255,0.2)':(pnl>=0?'rgba(0,200,150,0.2)':'rgba(255,92,92,0.2)');
+        whatIfHTML+='<div style="background:'+bg+';border:1px solid '+border+';border-radius:var(--r);padding:10px 12px;text-align:center">'
+          +'<div style="font-size:11px;font-weight:700;color:var(--text);font-family:DM Mono,monospace">$'+sp.toFixed(2)+'</div>'
+          +'<div style="font-size:9px;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:6px">'+(pct>=0?'+':'')+pct.toFixed(0)+'% from now</div>'
+          +(adjCB>0?'<div style="font-size:14px;font-weight:800;color:'+(pnl>=0?'var(--green)':'var(--red)')+';font-family:DM Mono,monospace">'+(pnl>=0?'+':'')+('$'+Math.abs(Math.round(pnl)).toLocaleString())+'</div>':'')
+          +'<div style="font-size:9px;color:var(--text3);font-family:DM Mono,monospace;margin-top:3px">'+(calledCount===0?'All expire — hold':calledCount===rows.length?'All called away':calledCount+'/'+rows.length+' called')+'</div>'
+          +'</div>';
+      });
+      whatIfHTML+='</div></div>';
+    }
+
+  } else {
+    // ── CASH-SECURED PUT ──
+    var totalCash=0,totalCost=0;
+    rows.forEach(function(r){var cash=r2(r.strike*r.contracts*100);totalCash=r2(totalCash+cash);totalCost=r2(totalCost+cash);});
+    var netCost=r2(totalCash-totalPrem);
+    var blendedStrike=r2(totalCost/totalShares);
+    var blendedEffCB=r2(netCost/totalShares);
+    var premYield=totalCash>0?r2(totalPrem/totalCash*100):0;
+
+    // adj CB impact — check if we already own this ticker
+    var existingAdj=adjCB,existingSh=0;
+    if(tk){
+      var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+      if(hk){
+        if(!existingAdj)existingAdj=HOLDINGS[hk].adjCB||HOLDINGS[hk].origCB||0;
+        existingSh=HOLDINGS[hk].shares||0;
+      }
+    }
+
+    sumHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:14px">';
+    sumHTML+=sCard('Cash Required','$'+totalCash.toLocaleString('en-US',{minimumFractionDigits:2}),totalShares+' shares × $'+blendedStrike.toFixed(2)+' blended','var(--amber)','Total cash you must hold to secure all these puts. Max outflow if ALL are assigned.');
+    sumHTML+=sCard('Premium Collected','+$'+totalPrem.toFixed(2),premYield.toFixed(2)+'% yield · '+totalContracts+' contracts','var(--green)','Premium you collect upfront. Yours regardless of assignment.');
+    sumHTML+=sCard('Net Cash if Assigned','$'+netCost.toLocaleString('en-US',{minimumFractionDigits:2}),'Cash needed − premium collected','var(--blue)','True net outflow if every put is assigned.');
+    sumHTML+=sCard('Blended Cost Basis','$'+blendedEffCB.toFixed(2)+'/sh','Across all '+totalShares+' shares if assigned','var(--green)','Effective cost per share across all strikes after subtracting premium. Your true break-even.');
+    sumHTML+=sCard('Total Shares if Assigned',totalShares.toLocaleString(),rows.length+' strikes · '+totalContracts+' contracts','var(--text)','');
+    sumHTML+=sCard('Premium Yield',premYield.toFixed(2)+'%','on total cash deployed',premYield>=1.5?'var(--green)':premYield>=0.8?'var(--amber)':'var(--red)','1.5%+ per week is strong for the wheel strategy.');
+    sumHTML+='</div>';
+
+    // Impact on existing position
+    if(existingAdj>0&&existingSh>0){
+      var blendedAfter=r2((existingAdj*existingSh+netCost)/(existingSh+totalShares));
+      var improved=blendedAfter<existingAdj;
+      contextHTML='<div style="padding:12px 16px;background:rgba(0,200,150,0.06);border:1px solid rgba(0,200,150,0.2);border-radius:var(--r);margin-bottom:12px;font-family:DM Mono,monospace">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">📊 Impact on Existing '+tk+' Position</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px">'
+        +'<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:3px">Current Adj CB</div><div style="font-size:16px;font-weight:800;color:var(--text2)">$'+existingAdj.toFixed(2)+'/sh</div><div style="font-size:10px;color:var(--text3)">'+existingSh.toLocaleString()+' shares held</div></div>'
+        +'<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:3px">New Blended CB</div><div style="font-size:16px;font-weight:800;color:'+(improved?'var(--green)':'var(--amber)')+'">$'+blendedAfter.toFixed(2)+'/sh</div><div style="font-size:10px;color:var(--text3)">'+(existingSh+totalShares).toLocaleString()+' shares total</div></div>'
+        +'<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:3px">CB Change</div><div style="font-size:16px;font-weight:800;color:'+(improved?'var(--green)':'var(--red)')+'">'+(improved?'−':'+')+Math.abs(r2(blendedAfter-existingAdj)).toFixed(2)+'/sh</div><div style="font-size:10px;color:var(--text3)">'+(improved?'lowers your CB':'raises your CB')+'</div></div>'
+        +'</div></div>';
+    }
+
+    // Breakdown table
+    breakdownHTML='<div style="overflow-x:auto;margin-bottom:14px"><table style="width:100%;border-collapse:collapse;font-family:DM Mono,monospace;font-size:12px">';
+    breakdownHTML+='<thead><tr style="background:var(--bg3);border-bottom:1px solid var(--border)">'
+      +'<th style="padding:8px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase">Strike</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase">Contracts</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase">Shares</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--amber);text-transform:uppercase">Cash Needed</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--green);text-transform:uppercase">Premium</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--blue);text-transform:uppercase">Eff CB/sh</th>'
+      +'<th style="padding:8px 12px;text-align:right;font-size:10px;color:var(--text3);text-transform:uppercase">OTM%</th>'
+      +'</tr></thead><tbody>';
+    rows.forEach(function(r,i){
+      var cash=r2(r.strike*r.contracts*100);
+      var prem=r2(r.premium*r.contracts*100);
+      var effCB=r2(r.strike-r.premium);
+      var otm=_cspLivePrice>0?r2((_cspLivePrice-r.strike)/_cspLivePrice*100):null;
+      var itm=_cspLivePrice>0&&r.strike>=_cspLivePrice;
+      breakdownHTML+='<tr style="background:'+(i%2===0?'transparent':'rgba(255,255,255,0.015)')+';border-bottom:1px solid rgba(255,255,255,0.04)">'
+        +'<td style="padding:9px 12px;font-weight:800;color:var(--text);font-size:14px">$'+parseFloat(r.strike).toFixed(2)+(itm?'<span style="margin-left:6px;font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,92,92,0.2);color:var(--red)">ITM</span>':'')+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:var(--blue);font-weight:700">'+r.contracts+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:var(--text2)">'+r.contracts*100+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:var(--amber);font-weight:700">$'+cash.toLocaleString('en-US',{minimumFractionDigits:2})+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:var(--green);font-weight:700">+$'+prem.toFixed(2)+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:var(--green);font-weight:700">$'+effCB.toFixed(2)+'</td>'
+        +'<td style="padding:9px 12px;text-align:right;color:'+(otm===null?'var(--text3)':itm?'var(--red)':otm<5?'var(--amber)':'var(--green)')+';font-weight:700">'+(otm===null?'—':(itm?'-':'')+Math.abs(otm).toFixed(1)+'%')+'</td>'
+        +'</tr>';
+    });
+    breakdownHTML+='<tr style="border-top:2px solid var(--border);background:rgba(0,200,150,0.04)">'
+      +'<td style="padding:10px 12px;font-weight:800;color:var(--text)">TOTAL / BLENDED</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--blue);font-weight:800">'+totalContracts+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--text2);font-weight:700">'+totalShares+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--amber);font-weight:800">$'+totalCash.toLocaleString('en-US',{minimumFractionDigits:2})+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--green);font-weight:800">+$'+totalPrem.toFixed(2)+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--green);font-weight:800">$'+blendedEffCB.toFixed(2)+'</td>'
+      +'<td style="padding:10px 12px;text-align:right;color:var(--text3)">blended</td>'
+      +'</tr></tbody></table></div>';
+
+    // What-if (CSP)
+    if(_cspLivePrice>0){
+      var prices=[_cspLivePrice*0.70,_cspLivePrice*0.80,_cspLivePrice*0.90,_cspLivePrice*0.95,_cspLivePrice,_cspLivePrice*1.05];
+      whatIfHTML='<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:10px">📈 What Happens at Expiry — Stock at...</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">';
+      prices.forEach(function(sp){
+        sp=Math.round(sp*100)/100;
+        var assignedCount=rows.filter(function(r){return r.strike>=sp;}).length;
+        var pnl=0;
+        rows.forEach(function(r){var prem=r.premium*r.contracts*100;if(r.strike>=sp)pnl+=prem+(sp-r.strike)*r.contracts*100;else pnl+=prem;});
+        var pct=r2((sp-_cspLivePrice)/_cspLivePrice*100);
+        whatIfHTML+='<div style="background:'+(pnl>=0?'rgba(0,200,150,0.07)':'rgba(255,92,92,0.07)')+';border:1px solid '+(pnl>=0?'rgba(0,200,150,0.2)':'rgba(255,92,92,0.2)')+';border-radius:var(--r);padding:10px 12px;text-align:center">'
+          +'<div style="font-size:11px;font-weight:700;color:var(--text);font-family:DM Mono,monospace">$'+sp.toFixed(2)+'</div>'
+          +'<div style="font-size:9px;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:6px">'+(pct>=0?'+':'')+pct.toFixed(0)+'% from now</div>'
+          +'<div style="font-size:14px;font-weight:800;color:'+(pnl>=0?'var(--green)':'var(--red)')+';font-family:DM Mono,monospace">'+(pnl>=0?'+':'')+('$'+Math.abs(Math.round(pnl)).toLocaleString())+'</div>'
+          +'<div style="font-size:9px;color:var(--text3);font-family:DM Mono,monospace;margin-top:3px">'+(assignedCount===0?'All expire worthless':assignedCount===rows.length?'All assigned':assignedCount+'/'+rows.length+' assigned')+'</div>'
+          +'</div>';
+      });
+      whatIfHTML+='</div></div>';
+    }
+  }
+
+  res.innerHTML='<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">'+sumHTML+contextHTML+breakdownHTML+whatIfHTML+'</div>';
+  res.style.display='block';
+}
+
+// ── Live chain functions ──
+function cspFetchChain(){
+  var tk=($d('csp-ticker').value||'').trim().toUpperCase();
+  if(!tk){alert('Enter a ticker (e.g. IONQ)');return;}
+  _cspTicker=tk;
+  if(_cspMode==='call') cspAutoFillFromHoldings(tk);
+  var btn=$d('csp-fetch-btn'),st=$d('csp-chain-status');
+  if(btn){btn.disabled=true;btn.textContent='⏳...';}
+  if(st)st.innerHTML='<span style="color:var(--blue)">Loading...</span>';
+  var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
+  var p=isLocal?fetch('/options?ticker='+encodeURIComponent(tk)).then(function(r){if(!r.ok)throw 0;return r.json();}):tryProxies('https://query1.finance.yahoo.com/v7/finance/options/'+tk+'?formatted=false');
+  p.then(function(data){
+    var result=data&&data.optionChain&&data.optionChain.result&&data.optionChain.result[0];
+    if(!result)throw new Error('No options for '+tk);
+    _cspLivePrice=(result.quote&&result.quote.regularMarketPrice)||0;
+    var expirations=(result.expirationDates||[]).map(epochToDate).filter(function(d){return daysUntil(d)>=0;}).slice(0,12);
+    if(!expirations.length)throw new Error('No expirations');
+    var sel=$d('csp-expiry-sel');
+    if(sel){
+      sel.innerHTML='';
+      expirations.forEach(function(exp){var opt=document.createElement('option');opt.value=exp;opt.textContent=formatExpiry(exp)+' ('+daysUntil(exp)+'d)';sel.appendChild(opt);});
+      sel.value=expirations.find(function(e){return daysUntil(e)>=4;})||expirations[0];
+    }
+    var badge=$d('csp-live-price-badge');if(badge&&_cspLivePrice)badge.textContent=tk+' $'+_cspLivePrice.toFixed(2);
+    var hint=$d('csp-chain-click-hint');if(hint)hint.textContent='Click row to add strike';
+    var row=$d('csp-expiry-row');if(row)row.style.display='block';
+    if(btn){btn.disabled=false;btn.textContent='⚡ Live Chain';}
+    if(st)st.innerHTML='<span style="color:var(--green)">✅ '+expirations.length+' expiries</span>';
+    cspLoadExpiry();
+  }).catch(function(e){
+    if(btn){btn.disabled=false;btn.textContent='⚡ Live Chain';}
+    if(st)st.innerHTML='<span style="color:var(--red)">⚠ '+(e&&e.message||'Failed')+'</span>';
+  });
+}
+
+function cspLoadExpiry(){
+  var sel=$d('csp-expiry-sel');if(!sel)return;
+  var expiry=sel.value;if(!expiry||!_cspTicker)return;
+  var tableWrap=$d('csp-chain-table');
+  if(tableWrap)tableWrap.innerHTML='<div style="color:var(--text3);font-size:11px;font-family:DM Mono,monospace;padding:8px">⟳ Loading...</div>';
+  var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
+  var epoch=dateToEpoch(expiry);
+  var p=isLocal?fetch('/options?ticker='+encodeURIComponent(_cspTicker)+'&date='+epoch).then(function(r){if(!r.ok)throw 0;return r.json();}):tryProxies('https://query1.finance.yahoo.com/v7/finance/options/'+_cspTicker+'?date='+epoch+'&formatted=false');
+  p.then(function(data){
+    var result=data&&data.optionChain&&data.optionChain.result&&data.optionChain.result[0];
+    if(!result)throw new Error('no data');
+    var opts=result.options&&result.options[0];
+    _cspLivePrice=(result.quote&&result.quote.regularMarketPrice)||_cspLivePrice;
+    // Store for optimizer
+    _optLiveChain[expiry]={puts:opts&&opts.puts||[],calls:opts&&opts.calls||[]};
+    var contracts=_cspMode==='put'?(opts&&opts.puts||[]):(opts&&opts.calls||[]);
+    cspRenderChainTable(contracts);
+    var badge=$d('csp-live-price-badge');if(badge&&_cspLivePrice)badge.textContent=_cspTicker+' $'+_cspLivePrice.toFixed(2);
+    cspCalcAndRender();
+  }).catch(function(){if(tableWrap)tableWrap.innerHTML='<div style="color:var(--amber);font-size:11px;font-family:DM Mono,monospace;padding:8px">⚠ Could not load chain for this expiry</div>';});
+}
+
+function cspRenderChainTable(contracts){
+  var wrap=$d('csp-chain-table');if(!wrap)return;
+  var isCall=_cspMode==='call';
+  if(!contracts||!contracts.length){wrap.innerHTML='<div style="color:var(--text3);font-size:11px;padding:8px">No contracts found</div>';return;}
+  contracts.sort(function(a,b){return isCall?(a.strike||0)-(b.strike||0):(b.strike||0)-(a.strike||0);});
+  var adjCB=cspGetAdjCB();
+  var html='<table style="width:100%;border-collapse:collapse;font-family:DM Mono,monospace;font-size:11px">'
+    +'<thead><tr style="background:var(--bg2)"><th style="padding:5px 10px;text-align:left;color:var(--text3);font-size:9px;text-transform:uppercase">Strike</th>'
+    +'<th style="padding:5px 10px;text-align:right;color:var(--text3);font-size:9px;text-transform:uppercase">Bid</th>'
+    +'<th style="padding:5px 10px;text-align:right;color:var(--text3);font-size:9px;text-transform:uppercase">Ask</th>'
+    +'<th style="padding:5px 10px;text-align:right;color:var(--green);font-size:9px;text-transform:uppercase">Mid ✦</th>'
+    +'<th style="padding:5px 10px;text-align:right;color:var(--text3);font-size:9px;text-transform:uppercase">IV%</th>'
+    +'<th style="padding:5px 10px;text-align:right;color:var(--text3);font-size:9px;text-transform:uppercase">OTM%</th>'
+    +(adjCB>0?'<th style="padding:5px 10px;text-align:right;color:var(--green);font-size:9px;text-transform:uppercase">vs CB</th>':'')
+    +'<th style="padding:5px 10px;text-align:center;color:var(--text3);font-size:9px;text-transform:uppercase">Use</th>'
+    +'</tr></thead><tbody>';
+  contracts.forEach(function(c,i){
+    var strike=c.strike||0;
+    var bid=c.bid||0,ask=c.ask||0,mid=r2((bid+ask)/2);
+    var iv=r2((c.impliedVolatility||0)*100);
+    var otm=_cspLivePrice>0?(isCall?r2((strike-_cspLivePrice)/_cspLivePrice*100):r2((_cspLivePrice-strike)/_cspLivePrice*100)):null;
+    var itm=_cspLivePrice>0&&(isCall?strike<=_cspLivePrice:strike>=_cspLivePrice);
+    var isAtm=_cspLivePrice>0&&Math.abs(strike-_cspLivePrice)/_cspLivePrice<0.02;
+    var aboveCB=adjCB>0&&(isCall?strike>=adjCB:strike<=adjCB);
+    var rowBg=itm?'rgba(255,92,92,0.05)':isAtm?'rgba(245,200,66,0.05)':(i%2===0?'transparent':'rgba(255,255,255,0.01)');
+    html+='<tr style="background:'+rowBg+';border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer" onclick="cspUseStrike('+strike+','+mid+')">'
+      +'<td style="padding:5px 10px;font-weight:700;color:var(--text)">$'+strike.toFixed(2)+(isAtm?'<span style="margin-left:4px;font-size:8px;color:var(--amber)">●ATM</span>':'')+(itm?'<span style="margin-left:4px;font-size:8px;color:var(--red)">ITM</span>':'')+'</td>'
+      +'<td style="padding:5px 10px;text-align:right;color:var(--text3)">'+(bid>0?'$'+bid.toFixed(2):'—')+'</td>'
+      +'<td style="padding:5px 10px;text-align:right;color:var(--text3)">'+(ask>0?'$'+ask.toFixed(2):'—')+'</td>'
+      +'<td style="padding:5px 10px;text-align:right;font-weight:700;color:'+(mid>0?'var(--green)':'var(--text3)')+'">'+(mid>0?'$'+mid.toFixed(2):'—')+'</td>'
+      +'<td style="padding:5px 10px;text-align:right;color:'+(iv>80?'var(--amber)':'var(--text3)')+'">'+(iv>0?iv+'%':'—')+'</td>'
+      +'<td style="padding:5px 10px;text-align:right;color:'+(otm===null?'var(--text3)':itm?'var(--red)':otm<3?'var(--amber)':'var(--green)')+'">'+(otm===null?'—':(itm?'−':'+')+''+Math.abs(otm).toFixed(1)+'%')+'</td>'
+      +(adjCB>0?'<td style="padding:5px 10px;text-align:right;color:'+(aboveCB?'var(--green)':'var(--red)')+';font-weight:700">'+(aboveCB?'+':'')+r2(strike-adjCB).toFixed(2)+'</td>':'')
+      +'<td style="padding:5px 10px;text-align:center"><button onclick="event.stopPropagation();cspUseStrike('+strike+','+mid+')" style="padding:2px 8px;font-size:10px;font-weight:700;background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.3);border-radius:4px;color:var(--green);cursor:pointer;font-family:DM Mono,monospace">+ Use</button></td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+function cspUseStrike(strike,mid){
+  var existing=_cspRows.find(function(r){return r.strike===strike;});
+  if(existing){if(mid>0)existing.premium=mid;}
+  else{_cspRows.push({id:_cspNextId++,strike:strike,contracts:1,premium:mid||0});}
+  cspRender();
+  var st=$d('csp-chain-status');
+  if(st){var prev=st.innerHTML;st.innerHTML='<span style="color:var(--green)">✅ $'+strike+' added</span>';setTimeout(function(){st.innerHTML=prev;},2000);}
+}
+
+// ══ SMART BUDGET OPTIMIZER ══
+function optBudgetPresets(){
+  // Sync ticker between optimizer and manual builder
+  var optTk=$d('opt-ticker'),cspTk=$d('csp-ticker');
+  if(optTk&&optTk.value&&cspTk&&!cspTk.value) cspTk.value=optTk.value;
+}
+
+function optFetchAndRun(){
+  var tk=($d('opt-ticker').value||'').trim().toUpperCase();
+  if(!tk){alert('Enter a ticker first');return;}
+  _cspTicker=tk;
+  var cspTk=$d('csp-ticker');if(cspTk)cspTk.value=tk;
+  if(_cspMode==='call') cspAutoFillFromHoldings(tk);
+
+  var btn=$d('opt-live-btn'),st=$d('opt-status');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Loading chain...';}
+  if(st)st.innerHTML='<span style="color:var(--blue)">Fetching live options...</span>';
+
+  var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
+  var p=isLocal?fetch('/options?ticker='+encodeURIComponent(tk)).then(function(r){if(!r.ok)throw 0;return r.json();}):tryProxies('https://query1.finance.yahoo.com/v7/finance/options/'+tk+'?formatted=false');
+
+  p.then(function(data){
+    var result=data&&data.optionChain&&data.optionChain.result&&data.optionChain.result[0];
+    if(!result)throw new Error('No options data');
+    _cspLivePrice=(result.quote&&result.quote.regularMarketPrice)||0;
+    var expirations=(result.expirationDates||[]).map(epochToDate).filter(function(d){return daysUntil(d)>=0;}).slice(0,8);
+
+    // Pick nearest weekly expiry (4-14 days out)
+    var targetExp=expirations.find(function(e){var d=daysUntil(e);return d>=4&&d<=14;})||expirations[0];
+    if(!targetExp)throw new Error('No valid expiry');
+
+    // Fetch that expiry's chain
+    var epoch=dateToEpoch(targetExp);
+    var p2=isLocal?fetch('/options?ticker='+encodeURIComponent(tk)+'&date='+epoch).then(function(r){if(!r.ok)throw 0;return r.json();}):tryProxies('https://query1.finance.yahoo.com/v7/finance/options/'+tk+'?date='+epoch+'&formatted=false');
+
+    return p2.then(function(data2){
+      var result2=data2&&data2.optionChain&&data2.optionChain.result&&data2.optionChain.result[0];
+      if(!result2)throw new Error('No chain data');
+      var opts=result2.options&&result2.options[0];
+      _optLiveChain[targetExp]={puts:opts&&opts.puts||[],calls:opts&&opts.calls||[]};
+      if(btn){btn.disabled=false;btn.textContent='⚡ Live + Optimize';}
+      if(st)st.innerHTML='<span style="color:var(--green)">✅ Chain loaded</span>';
+      optRunOptimizer(targetExp);
+    });
+  }).catch(function(e){
+    if(btn){btn.disabled=false;btn.textContent='⚡ Live + Optimize';}
+    if(st)st.innerHTML='<span style="color:var(--red)">⚠ '+(e&&e.message||'Failed')+'</span>';
+    // Fall back to running optimizer without live data
+    optRunOptimizer(null);
+  });
+}
+
+function optRunOptimizer(forcedExpiry){
+  var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
+  var tk=($d('opt-ticker')&&$d('opt-ticker').value||'').toUpperCase()||_cspTicker||'';
+  var adjCB=parseFloat(($d('opt-adj-cb')&&$d('opt-adj-cb').value)||0)||0;
+  var sharesHeld=parseFloat(($d('opt-shares-held')&&$d('opt-shares-held').value)||0)||0;
+  var goal=($d('opt-goal')&&$d('opt-goal').value)||'lower_cb';
+  var isCall=_cspMode==='call';
+  var res=$d('opt-results');if(!res)return;
+
+  if(!budget){res.style.display='none';res.innerHTML='';return;}
+
+  // Auto-fill adjCB/shares from holdings if not set
+  if(tk&&(!adjCB||(!sharesHeld&&isCall))){
+    var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk){
+      var hld=HOLDINGS[hk];
+      if(!adjCB) adjCB=hld.adjCB!=null?hld.adjCB:(hld.origCB||0);
+      if(!sharesHeld) sharesHeld=hld.shares||0;
+      if(adjCB&&$d('opt-adj-cb')&&!$d('opt-adj-cb').value){$d('opt-adj-cb').value=adjCB;}
+      if(sharesHeld&&$d('opt-shares-held')&&!$d('opt-shares-held').value){$d('opt-shares-held').value=sharesHeld;}
+    }
+  }
+
+  // Get live chain contracts if available
+  var expiry=forcedExpiry||Object.keys(_optLiveChain)[0]||null;
+  var liveContracts=expiry&&_optLiveChain[expiry]?(isCall?_optLiveChain[expiry].calls:_optLiveChain[expiry].puts):null;
+
+  // Build candidate strikes from live chain or estimate
+  var candidates=[];
+  var liveP=_cspLivePrice||0;
+
+  if(liveContracts&&liveContracts.length>0){
+    // Use real live data — filter to OTM options with valid mid price
+    liveContracts.forEach(function(c){
+      var strike=c.strike||0;
+      var bid=c.bid||0,ask=c.ask||0,mid=r2((bid+ask)/2);
+      if(!mid||mid<=0)return;
+      var isOTM=isCall?(strike>liveP):(strike<liveP);
+      if(!isOTM&&!isCall&&strike<liveP*1.05)isOTM=true; // include slight OTM for CSP
+      if(!isOTM&&isCall&&strike>liveP*0.95)isOTM=true;
+      if(strike<=0||mid<=0)return;
+      var maxCt=isCall?Math.floor((sharesHeld||9999)/100):Math.floor(budget/(strike*100));
+      if(maxCt<1)return;
+      var iv=r2((c.impliedVolatility||0)*100);
+      var otmPct=liveP>0?(isCall?r2((strike-liveP)/liveP*100):r2((liveP-strike)/liveP*100)):0;
+      candidates.push({strike:strike,premium:mid,iv:iv,otmPct:otmPct,maxContracts:maxCt,live:true});
+    });
+  }
+
+  if(!candidates.length && liveP>0){
+    // Estimate from IV if no live chain — generate synthetic strikes
+    var baseIV=60; // default 60% IV estimate
+    var strikes=[];
+    var step=liveP<20?0.5:liveP<100?1:2.5;
+    if(isCall){
+      for(var s=r2(liveP*1.02);s<=r2(liveP*1.25);s=r2(s+step)) strikes.push(r2(s));
+    } else {
+      for(var s=r2(liveP*0.75);s<=r2(liveP*0.98);s=r2(s+step)) strikes.push(r2(s));
+    }
+    strikes.forEach(function(strike){
+      var otmPct=liveP>0?(isCall?r2((strike-liveP)/liveP*100):r2((liveP-strike)/liveP*100)):5;
+      var ivD=baseIV/100,dte=7,tY=dte/365,sqT=Math.sqrt(tY);
+      var d1=(Math.log(liveP/strike)+0.5*ivD*ivD*tY)/(ivD*sqT);
+      function nCDF(x){var t=1/(1+0.2316419*Math.abs(x));var y=1-((((1.330274429*t-1.821255978)*t+1.781477937)*t-0.356563782)*t+0.319381530)*t*Math.exp(-x*x/2)/2.506628;return x>=0?y:1-y;}
+      var delta=Math.abs(nCDF(d1)-( isCall?0:1));
+      var ext=liveP*ivD*sqT*0.4*Math.abs(delta);
+      var intr=isCall?Math.max(0,liveP-strike):Math.max(0,strike-liveP);
+      var mid=r2(Math.max(0.05,intr+ext));
+      var maxCt=isCall?Math.floor((sharesHeld||9999)/100):Math.floor(budget/(strike*100));
+      if(maxCt<1)return;
+      candidates.push({strike:strike,premium:mid,iv:baseIV,otmPct:otmPct,maxContracts:maxCt,live:false});
+    });
+  }
+
+  if(!candidates.length){
+    res.style.display='block';
+    res.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:12px">⚠ Enter a ticker with a live price, or click ⚡ Live + Optimize to load real chain data.</div>';
+    return;
+  }
+
+  // ── Run optimizer ──
+  // Strategy: generate combinations of strikes that fit within budget
+  // Score each combination based on the goal
+
+  // For CSP: generate all valid single-strike allocations + 2-3 strike combos
+  // For CC: maximize premium on owned shares
+
+  var solutions=[];
+
+  if(!isCall){
+    // CSP: try all single strikes + multi-strike combinations
+    // Single strike — all contracts at one strike
+    candidates.forEach(function(c){
+      var maxCt=Math.min(c.maxContracts,Math.floor(budget/(c.strike*100)));
+      if(maxCt<1)return;
+      var totalCash=r2(c.strike*maxCt*100);
+      var totalPrem=r2(c.premium*maxCt*100);
+      var effCB=r2(c.strike-c.premium);
+      var cbImprovement=adjCB>0?r2(adjCB-effCB):0;
+      solutions.push({
+        strikes:[{strike:c.strike,contracts:maxCt,premium:c.premium,live:c.live}],
+        totalCash:totalCash,totalPrem:totalPrem,totalShares:maxCt*100,
+        blendedEffCB:effCB,premYield:r2(totalPrem/totalCash*100),
+        cbImprovement:cbImprovement,maxContracts:maxCt,label:'Single strike'
+      });
+    });
+
+    // 2-strike combinations — split budget ~60/40 across two strikes
+    if(candidates.length>=2){
+      for(var i=0;i<Math.min(candidates.length,8);i++){
+        for(var j=i+1;j<Math.min(candidates.length,8);j++){
+          var c1=candidates[i],c2=candidates[j];
+          // Sort so higher strike (more premium) is first
+          if(c1.strike<c2.strike){var tmp=c1;c1=c2;c2=tmp;}
+          // Try various splits
+          var splits=[[0.6,0.4],[0.5,0.5],[0.4,0.6],[0.7,0.3]];
+          splits.forEach(function(split){
+            var b1=Math.floor(budget*split[0]),b2=Math.floor(budget*split[1]);
+            var ct1=Math.floor(b1/(c1.strike*100)),ct2=Math.floor(b2/(c2.strike*100));
+            if(ct1<1||ct2<1)return;
+            var totalCash=r2(c1.strike*ct1*100+c2.strike*ct2*100);
+            if(totalCash>budget)return;
+            var totalPrem=r2(c1.premium*ct1*100+c2.premium*ct2*100);
+            var totalShares=(ct1+ct2)*100;
+            var blendedEffCB=r2((c1.strike*ct1*100+c2.strike*ct2*100-totalPrem)/totalShares);
+            var premYield=r2(totalPrem/totalCash*100);
+            var cbImprovement=adjCB>0?r2(adjCB-blendedEffCB):0;
+            solutions.push({
+              strikes:[{strike:c1.strike,contracts:ct1,premium:c1.premium,live:c1.live},{strike:c2.strike,contracts:ct2,premium:c2.premium,live:c2.live}],
+              totalCash:totalCash,totalPrem:totalPrem,totalShares:totalShares,
+              blendedEffCB:blendedEffCB,premYield:premYield,cbImprovement:cbImprovement,
+              maxContracts:ct1+ct2,label:'2-strike ladder'
+            });
+          });
+        }
+      }
+    }
+
+    // 3-strike ladder — spread across 3 strikes
+    if(candidates.length>=3){
+      var sorted=candidates.slice().sort(function(a,b){return b.strike-a.strike;});
+      var top3=sorted.slice(0,Math.min(6,sorted.length));
+      for(var i=0;i<top3.length-2;i++){
+        for(var j=i+1;j<top3.length-1;j++){
+          for(var k=j+1;k<top3.length;k++){
+            var ca=top3[i],cb2=top3[j],cc=top3[k];
+            var ct1=Math.floor(budget*0.4/(ca.strike*100));
+            var ct2=Math.floor(budget*0.35/(cb2.strike*100));
+            var ct3=Math.floor(budget*0.25/(cc.strike*100));
+            if(ct1<1||ct2<1||ct3<1)return;
+            var totalCash=r2(ca.strike*ct1*100+cb2.strike*ct2*100+cc.strike*ct3*100);
+            if(totalCash>budget)return;
+            var totalPrem=r2(ca.premium*ct1*100+cb2.premium*ct2*100+cc.premium*ct3*100);
+            var totalShares=(ct1+ct2+ct3)*100;
+            var blendedEffCB=r2((totalCash-totalPrem)/totalShares);
+            var premYield=r2(totalPrem/totalCash*100);
+            var cbImprovement=adjCB>0?r2(adjCB-blendedEffCB):0;
+            solutions.push({
+              strikes:[{strike:ca.strike,contracts:ct1,premium:ca.premium,live:ca.live},{strike:cb2.strike,contracts:ct2,premium:cb2.premium,live:cb2.live},{strike:cc.strike,contracts:ct3,premium:cc.premium,live:cc.live}],
+              totalCash:totalCash,totalPrem:totalPrem,totalShares:totalShares,
+              blendedEffCB:blendedEffCB,premYield:premYield,cbImprovement:cbImprovement,
+              maxContracts:ct1+ct2+ct3,label:'3-strike ladder'
+            });
+          }
+        }
+      }
+    }
+  } else {
+    // CC: maximize premium on sharesHeld
+    var maxContractsPossible=Math.floor((sharesHeld||100)/100);
+    candidates.forEach(function(c){
+      if(c.strike<=(adjCB>0?adjCB*0.95:0))return; // skip below adj CB
+      var ct=Math.min(c.maxContracts,maxContractsPossible);
+      if(ct<1)return;
+      var totalPrem=r2(c.premium*ct*100);
+      var aboveCB=adjCB>0&&c.strike>=adjCB;
+      var pnlIfCalled=adjCB>0?r2((c.strike-adjCB)*ct*100+totalPrem):totalPrem;
+      solutions.push({
+        strikes:[{strike:c.strike,contracts:ct,premium:c.premium,live:c.live}],
+        totalCash:0,totalPrem:totalPrem,totalShares:ct*100,
+        blendedEffCB:adjCB>0?adjCB:0,premYield:adjCB>0&&sharesHeld>0?r2(totalPrem/(sharesHeld*adjCB)*100):0,
+        cbImprovement:0,maxContracts:ct,aboveCB:aboveCB,pnlIfCalled:pnlIfCalled,
+        otmPct:c.otmPct,label:'Single strike',adjCBLabel:adjCB>0&&c.strike>=adjCB?'✅ Above adj CB':'⚠ Below adj CB'
+      });
+    });
+    // 2-strike split for CC
+    if(candidates.length>=2&&maxContractsPossible>=2){
+      for(var i=0;i<Math.min(candidates.length,6);i++){
+        for(var j=i+1;j<Math.min(candidates.length,6);j++){
+          var c1=candidates[i],c2=candidates[j];
+          var ct1=Math.floor(maxContractsPossible*0.6),ct2=maxContractsPossible-ct1;
+          if(ct1<1||ct2<1)continue;
+          var totalPrem=r2(c1.premium*ct1*100+c2.premium*ct2*100);
+          var blendedStrike=r2((c1.strike*ct1*100+c2.strike*ct2*100)/((ct1+ct2)*100));
+          var pnlIfCalled=adjCB>0?r2((blendedStrike-adjCB)*(ct1+ct2)*100+totalPrem):totalPrem;
+          solutions.push({
+            strikes:[{strike:c1.strike,contracts:ct1,premium:c1.premium,live:c1.live},{strike:c2.strike,contracts:ct2,premium:c2.premium,live:c2.live}],
+            totalCash:0,totalPrem:totalPrem,totalShares:(ct1+ct2)*100,
+            blendedEffCB:adjCB||0,premYield:adjCB>0&&sharesHeld>0?r2(totalPrem/(sharesHeld*adjCB)*100):0,
+            cbImprovement:0,maxContracts:ct1+ct2,pnlIfCalled:pnlIfCalled,
+            aboveCB:adjCB>0&&c1.strike>=adjCB&&c2.strike>=adjCB,label:'2-strike split',
+            adjCBLabel:adjCB>0?((c1.strike>=adjCB?'✅':'⚠')+' $'+c1.strike+' / '+(c2.strike>=adjCB?'✅':'⚠')+' $'+c2.strike):'—'
+          });
+        }
+      }
+    }
+  }
+
+  if(!solutions.length){
+    res.style.display='block';
+    res.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:12px">⚠ No valid combinations fit within $'+budget.toLocaleString()+'. Try a larger budget or different ticker.</div>';
+    return;
+  }
+
+  // Score solutions by goal
+  solutions.forEach(function(s){
+    if(goal==='lower_cb')      s.score = (s.cbImprovement||0)*10 + s.premYield;
+    else if(goal==='max_premium') s.score = s.totalPrem + s.premYield*10;
+    else if(goal==='max_contracts') s.score = s.maxContracts*100 + s.premYield;
+    else                           s.score = (s.strikes.length>0?(s.strikes[0].otmPct||0)*10:0) + s.premYield;
+  });
+  solutions.sort(function(a,b){return b.score-a.score;});
+
+  // Deduplicate — remove near-identical results
+  var seen={};
+  solutions=solutions.filter(function(s){
+    var key=s.strikes.map(function(r){return r.strike+':'+r.contracts;}).join('|');
+    if(seen[key])return false;seen[key]=true;return true;
+  });
+
+  var top=solutions.slice(0,4);
+
+  // Render optimizer results
+  var budgetDisplay='$'+budget.toLocaleString();
+  var hasLive=top.some(function(s){return s.strikes.some(function(r){return r.live;});});
+
+  var html='<div style="border-top:1px solid rgba(0,200,150,0.2);padding-top:12px;margin-top:4px">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">';
+  html+='<div style="font-size:11px;font-weight:700;color:var(--green);font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:0.05em">Top '+top.length+' combinations for '+budgetDisplay+(tk?' · '+tk:'')+(liveP>0?' @ $'+liveP.toFixed(2):'')+'</div>';
+  html+='<div style="display:flex;gap:6px;align-items:center">';
+  html+='<span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">'+(hasLive?'✅ Live prices':'⚠ Estimated premiums — click ⚡ Live + Optimize for real data')+'</span>';
+  html+='</div></div>';
+
+  html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
+  top.forEach(function(s,rank){
+    var isTop=rank===0;
+    var label=rank===0?'🏆 Best Match':rank===1?'2nd':'3rd';
+    var borderCol=isTop?'rgba(0,200,150,0.5)':'var(--border)';
+    var bgCol=isTop?'rgba(0,200,150,0.06)':'var(--bg3)';
+
+    html+='<div style="background:'+bgCol+';border:2px solid '+borderCol+';border-radius:var(--r);padding:14px 16px;position:relative">';
+    if(isTop)html+='<div style="position:absolute;top:-1px;right:12px;font-size:9px;font-weight:700;padding:2px 8px;background:var(--green);color:#000;border-radius:0 0 6px 6px;font-family:DM Mono,monospace">BEST FOR GOAL</div>';
+    html+='<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:6px">'+label+' · '+s.label+'</div>';
+
+    // Strike pills
+    html+='<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">';
+    s.strikes.forEach(function(r){
+      var aboveCB=adjCB>0&&(isCall?r.strike>=adjCB:r.strike<=adjCB);
+      html+='<div style="background:rgba(0,0,0,0.25);border-radius:6px;padding:5px 10px;text-align:center;border:1px solid '+(aboveCB?'rgba(0,200,150,0.3)':'var(--border)')+'">'
+        +'<div style="font-size:15px;font-weight:900;color:var(--text);font-family:DM Mono,monospace">$'+r.strike.toFixed(2)+'</div>'
+        +'<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">'+r.contracts+'ct · +$'+r.premium.toFixed(2)+'/sh</div>'
+        +(adjCB>0?'<div style="font-size:9px;color:'+(aboveCB?'var(--green)':'var(--red)')+'">'+( aboveCB?'✅ above CB':'⚠ below CB')+'</div>':'')
+        +(r.live?'':'<div style="font-size:8px;color:var(--text3)">est.</div>')
+      +'</div>';
+    });
+    html+='</div>';
+
+    // Key metrics
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-family:DM Mono,monospace">';
+    if(!isCall){
+      html+='<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Cash Needed</div><div style="font-size:14px;font-weight:800;color:var(--amber)">$'+s.totalCash.toLocaleString('en-US',{minimumFractionDigits:2})+'</div></div>';
+      html+='<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Premium</div><div style="font-size:14px;font-weight:800;color:var(--green)">+$'+s.totalPrem.toFixed(2)+'</div></div>';
+      html+='<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Eff CB if Assigned</div><div style="font-size:14px;font-weight:800;color:var(--green)">$'+s.blendedEffCB.toFixed(2)+'/sh</div></div>';
+      html+='<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Yield</div><div style="font-size:14px;font-weight:800;color:'+(s.premYield>=1.5?'var(--green)':'var(--amber)')+'">'+s.premYield.toFixed(2)+'%</div></div>';
+      if(adjCB>0)html+='<div style="grid-column:span 2"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">CB Improvement vs $'+adjCB+'/sh</div><div style="font-size:14px;font-weight:800;color:'+(s.cbImprovement>0?'var(--green)':'var(--red)')+'">'+(s.cbImprovement>0?'−':'+')+'$'+Math.abs(s.cbImprovement).toFixed(2)+'/sh</div></div>';
+      html+='<div style="grid-column:span 2"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Shares if All Assigned</div><div style="font-size:14px;font-weight:800;color:var(--blue)">'+s.totalShares+' shares</div></div>';
+    } else {
+      html+='<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Premium Collected</div><div style="font-size:14px;font-weight:800;color:var(--green)">+$'+s.totalPrem.toFixed(2)+'</div></div>';
+      html+='<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Yield on Position</div><div style="font-size:14px;font-weight:800;color:'+(s.premYield>=1?'var(--green)':'var(--amber)')+'">'+s.premYield.toFixed(2)+'%</div></div>';
+      if(s.pnlIfCalled!=null)html+='<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">P&L if Called</div><div style="font-size:14px;font-weight:800;color:'+(s.pnlIfCalled>=0?'var(--green)':'var(--red)')+'">'+(s.pnlIfCalled>=0?'+':'')+('$'+Math.round(s.pnlIfCalled).toLocaleString())+'</div></div>';
+      if(s.adjCBLabel)html+='<div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;margin-bottom:2px">vs Adj CB</div><div style="font-size:12px;font-weight:700;color:'+(s.aboveCB?'var(--green)':'var(--red)')+'">'+s.adjCBLabel+'</div></div>';
+    }
+    html+='</div>';
+
+    // Use This button
+    html+='<button onclick="optUseSolution('+rank+')" style="margin-top:12px;width:100%;padding:7px;font-size:12px;font-weight:700;background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.3);border-radius:6px;color:var(--green);cursor:pointer;font-family:DM Mono,monospace">↓ Use in Manual Builder</button>';
+    html+='</div>';
+  });
+  html+='</div></div>';
+
+  // Store solutions for "Use" button
+  window._optSolutions=top;
+  res.innerHTML=html;
+  res.style.display='block';
+}
+
+function optUseSolution(rank){
+  var sol=window._optSolutions&&window._optSolutions[rank];
+  if(!sol)return;
+  // Load into manual builder
+  _cspRows=sol.strikes.map(function(r){return {id:_cspNextId++,strike:r.strike,contracts:r.contracts,premium:r.premium};});
+  // Sync ticker
+  var tk=$d('opt-ticker');if(tk&&tk.value){var ct=$d('csp-ticker');if(ct)ct.value=tk.value;_cspTicker=tk.value;}
+  // Sync adj CB
+  var oac=$d('opt-adj-cb');if(oac&&oac.value){var mac=$d('csp-manual-adjcb');if(mac)mac.value=oac.value;}
+  cspRender();
+  // Scroll to manual builder
+  var rows=$d('csp-rows');if(rows)rows.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// Initialize
+(function(){
+  setTimeout(function(){
+    if($d('csp-rows')) cspSetMode('put');
+  },600);
+})();
 
 var SCOUT_CANDIDATES=[
   {tk:'IONQ',name:'IonQ Inc',sector:'quantum',price:32,iv:110,weekly:1.8,desc:'Quantum computing — high IV, active weeklies'},
