@@ -456,7 +456,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Ticker</div>
-          <input id="opt-ticker" placeholder="e.g. IONQ" oninput="this.value=this.value.toUpperCase()" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
+          <input id="opt-ticker" placeholder="e.g. IONQ" oninput="this.value=this.value.toUpperCase();optBudgetPresets();" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
         </div>
         <div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Budget ($)</div>
@@ -485,12 +485,12 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       <!-- Quick budget presets -->
       <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center">
         <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Quick:</span>
-        <button onclick="$d('opt-budget').value=5000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$5K</button>
-        <button onclick="$d('opt-budget').value=10000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$10K</button>
-        <button onclick="$d('opt-budget').value=25000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$25K</button>
-        <button onclick="$d('opt-budget').value=50000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$50K</button>
-        <button onclick="$d('opt-budget').value=60000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$60K</button>
-        <button onclick="$d('opt-budget').value=100000;optBudgetPresets()" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$100K</button>
+        <button onclick="optSetBudget(5000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$5K</button>
+        <button onclick="optSetBudget(10000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$10K</button>
+        <button onclick="optSetBudget(25000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$25K</button>
+        <button onclick="optSetBudget(50000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$50K</button>
+        <button onclick="optSetBudget(60000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$60K</button>
+        <button onclick="optSetBudget(100000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$100K</button>
         <span id="opt-status" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-left:4px"></span>
       </div>
       <!-- Optimizer results -->
@@ -3277,7 +3277,7 @@ function readFid(f){
   if(acctName) setSt('fid-st','[OK] Uploading to: '+acctName+' - reading file?','sok');
   var r=new FileReader();
   r.onload=function(e){
-    setSt('fid-st','~ Reading file?','sok');
+    setSt('fid-st','[~] Reading file?','sok');
     try{
       var attempted=0;
       var trades=parseFidOptions(e.target.result,'',function(){attempted++;});
@@ -3335,7 +3335,7 @@ function fetchTechnicals(ticker, price){
   var card=$d('adv-technicals');
   if(!card)return;
   card.style.display='block';
-  card.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">~ Fetching RSI &amp; Bollinger Bands for '+ticker+'?</div>';
+  card.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:\'DM Mono\',monospace">[~] Fetching RSI &amp; Bollinger Bands for '+ticker+'?</div>';
 
   // Fetch 90 days OHLCV via public proxies with fallbacks
   var url='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker)+'?interval=1d&range=90d';
@@ -3623,7 +3623,7 @@ function runAdvisor(){
   var under=adjCB>price;
   var premCollected=r2((origCB-adjCB)*shares); // total premium already collected
 
-  var nCDF=function(x){var t=1/(1+0.3275911*Math.abs(x));var y=1-(((((1.061405429*t-1.453152027)*t+1.421413741)*t-0.284496736)*t+0.254829592)*t)*Math.exp(-x*x);return x>=0?y:1-y;}
+  var nCDF=function(x){var t=1/(1+0.3275911*Math.abs(x));var y=1-(((((1.061405429*t-1.453152027)*t+1.421413741)*t-0.284496736)*t+0.254829592)*t)*Math.exp(-x*x);return x>=0?y:1-y;};
   function prem(K,call){var d1=(Math.log(price/K)+0.5*ivD*ivD*tY)/(ivD*sqT);var delta=call?nCDF(d1):nCDF(d1)-1;var ext=price*ivD*sqT*0.4*Math.abs(delta);var intr=call?Math.max(0,price-K):Math.max(0,K-price);return Math.max(r2(intr+ext),0.01);}
   function aRisk(K,call){var d=call?(K-price)/price*100:(price-K)/price*100;if(d<=0)return call?90:85;if(d>25)return 5;return Math.round(Math.max(5,call?80-d*3:75-d*3));}
 
@@ -3812,13 +3812,13 @@ function fetchLivePrices(){
   if(!tickers.length)return;
   var btn=$d('refresh-prices-btn');
   var st=$d('price-status');
-  if(btn){btn.textContent='~ Fetching...';btn.disabled=true;}
+  if(btn){btn.textContent='[~] Fetching...';btn.disabled=true;}
   if(st)st.textContent='';
   _fetchInProgress=true;
 
   // Unique symbols only
   var symbols=tickers.map(function(k){return HOLDINGS[k].ticker||k.split('_')[0];}).filter(function(v,i,a){return a.indexOf(v)===i;});
-  if(!symbols.length){_fetchInProgress=false;if(btn){btn.textContent='~ Live Prices';btn.disabled=false;}return;}
+  if(!symbols.length){_fetchInProgress=false;if(btn){btn.textContent='[~] Live Prices';btn.disabled=false;}return;}
 
   var updated=0;
 
@@ -3838,7 +3838,7 @@ function fetchLivePrices(){
 
   function allDone(){
     _fetchInProgress=false;
-    if(btn){btn.textContent='~ Live Prices';btn.disabled=false;}
+    if(btn){btn.textContent='[~] Live Prices';btn.disabled=false;}
     if(updated>0){
       autoSave();
       // Only re-render if on holdings tab to avoid freezing other tabs
@@ -5117,7 +5117,7 @@ function fetchSPReturn(){
   if(!startDate){return;}
   var btn=$d('bench-sp-fetch');
   var status=$d('bench-sp-status');
-  if(btn){btn.textContent='~ Fetching...';btn.disabled=true;}
+  if(btn){btn.textContent='[~] Fetching...';btn.disabled=true;}
   if(status){status.textContent='Fetching SPY data...';status.style.color='var(--text3)';}
 
   var startTs=Math.floor(new Date(startDate+'T00:00:00').getTime()/1000);
@@ -5130,13 +5130,13 @@ function fetchSPReturn(){
       status.textContent='SPY: $'+sp.toFixed(2)+' ? $'+ep.toFixed(2)+' = '+ret+'%';
       status.style.color='var(--green)';
     }
-    if(btn){btn.textContent='~ Auto-fetch';btn.disabled=false;}
+    if(btn){btn.textContent='[~] Auto-fetch';btn.disabled=false;}
     calcBenchmark();
   }
 
   function onFail(msg){
     if(status){status.textContent=msg||'Could not fetch - enter % manually';status.style.color='var(--amber)';}
-    if(btn){btn.textContent='~ Auto-fetch';btn.disabled=false;}
+    if(btn){btn.textContent='[~] Auto-fetch';btn.disabled=false;}
   }
 
   function parseChart(d){
@@ -5347,7 +5347,7 @@ function fetchLiveChainAndRun(){
 
   var btn=$d('fetch-chain-btn');
   var st=$d('chain-status');
-  if(btn){btn.disabled=true;btn.textContent='.. Fetching chain...';}
+  if(btn){btn.disabled=true;btn.textContent='[..] Fetching chain...';}
   if(st)st.innerHTML='<span style="color:var(--blue)">? Fetching live options chain...</span>';
 
   // On localhost (serve_wheel.py): use /options endpoint - handles crumb auth server-side
@@ -5518,7 +5518,7 @@ function renderChainForExpiry(){
 
 function fetchYahooExpiry(ticker, expiry, type){
   var inner=$d('chain-table-inner');
-  if(inner)inner.innerHTML='<div style="color:var(--text3);padding:20px;text-align:center">.. Loading '+type+' chain for '+formatExpiry(expiry)+'...</div>';
+  if(inner)inner.innerHTML='<div style="color:var(--text3);padding:20px;text-align:center">[..] Loading '+type+' chain for '+formatExpiry(expiry)+'...</div>';
 
   var epoch=dateToEpoch(expiry);
   var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
@@ -5699,7 +5699,7 @@ function useChainStrike(strike, mid, iv, dte){
     banner.onclick=function(){var o=$d('adv-out');if(o)o.scrollIntoView({behavior:'smooth',block:'start'});banner.remove();};
     document.body.appendChild(banner);
   }
-  banner.textContent='? $'+strike+' loaded - scroll down to see analysis ';
+  banner.textContent='? $'+strike+' loaded - scroll down to see analysis ?';
   clearTimeout(banner._t);
   banner._t=setTimeout(function(){if(banner.parentNode)banner.remove();},4000);
 }
@@ -5720,7 +5720,7 @@ function fetchRollChain(){
   var tk=($d('roll-ticker').value||'').trim().toUpperCase();
   if(!tk){alert('Select or type a ticker first.');return;}
   var btn=$d('roll-fetch-btn'), st=$d('roll-chain-status');
-  if(btn){btn.disabled=true;btn.textContent='.. Fetching...';}
+  if(btn){btn.disabled=true;btn.textContent='[..] Fetching...';}
   if(st)st.innerHTML='<span style="color:var(--blue)">? Loading chain for '+tk+'...</span>';
   var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
   var p=isLocal?fetch('/options?ticker='+encodeURIComponent(tk)).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
@@ -6140,8 +6140,10 @@ function cspSetMode(mode){
       ? '<strong style="color:var(--blue)">Cash-Secured Put:</strong> Sell puts and hold cash to buy shares if assigned. The optimizer finds the best strike combination for your budget to lower your adjusted cost basis.'
       : '<strong style="color:var(--green)">Covered Call:</strong> Sell calls against shares you already own. The optimizer finds the best strikes above your adj CB to maximize premium while protecting your position.';
   }
-  // Blank rows - user enters their own strikes
-  _cspRows = [{id:_cspNextId++,strike:0,contracts:1,premium:0},{id:_cspNextId++,strike:0,contracts:1,premium:0},{id:_cspNextId++,strike:0,contracts:1,premium:0}];
+  // Start with 3 blank rows - user enters their own strikes
+  _cspRows = [{id:_cspNextId++,strike:0,contracts:1,premium:0},
+              {id:_cspNextId++,strike:0,contracts:1,premium:0},
+              {id:_cspNextId++,strike:0,contracts:1,premium:0}];
   if(_cspLivePrice>0) cspLoadExpiry();
   cspRender();
 }
@@ -6164,17 +6166,17 @@ function cspGetAdjCB(){
 }
 
 function cspReset(){
-  _cspLivePrice=0; _cspTicker='';
+  _cspLivePrice=0; _cspTicker=''; _optLiveChain={};
   var er=$d('csp-expiry-row');if(er)er.style.display='none';
   var st=$d('csp-chain-status');if(st)st.textContent='';
   var tk=$d('csp-ticker');if(tk)tk.value='';
-  var sh=$d('csp-shares-held');if(sh)sh.value='';
-  var ac=$d('csp-adj-cb');if(ac)ac.value='';
-  var mac=$d('csp-manual-adjcb');if(mac)mac.value='';
   var otk=$d('opt-ticker');if(otk)otk.value='';
   var ob=$d('opt-budget');if(ob)ob.value='';
   var oac=$d('opt-adj-cb');if(oac)oac.value='';
   var ores=$d('opt-results');if(ores){ores.style.display='none';ores.innerHTML='';}
+  var sh=$d('csp-shares-held');if(sh)sh.value='';
+  var ac=$d('csp-adj-cb');if(ac)ac.value='';
+  var mac=$d('csp-manual-adjcb');if(mac)mac.value='';
   cspSetMode(_cspMode);
 }
 
@@ -6188,12 +6190,12 @@ function cspRemove(idx){
 }
 function cspInc(idx){if(_cspRows[idx]){_cspRows[idx].contracts++;cspRender();}}
 function cspDec(idx){if(_cspRows[idx]&&_cspRows[idx].contracts>1){_cspRows[idx].contracts--;cspRender();}}
-function cspUpdateStrike(idx,val){if(_cspRows[idx])_cspRows[idx].strike=parseFloat(val)||0;cspRender();}
-function cspUpdatePremium(idx,val){if(_cspRows[idx])_cspRows[idx].premium=parseFloat(val)||0;cspRender();}
 function cspUpdate(idx,field,val){
   if(_cspRows[idx]) _cspRows[idx][field]=parseFloat(val)||0;
   cspRender();
 }
+function cspUpdateStrike(idx,val){cspUpdate(idx,'strike',val);}
+function cspUpdatePremium(idx,val){cspUpdate(idx,'premium',val);}
 
 // -- Manual row renderer --
 function cspRender(){
@@ -6233,13 +6235,13 @@ function cspRender(){
         +'</div>';
     }
     html+='<div style="display:grid;grid-template-columns:110px 90px 90px 100px 1fr 24px;gap:8px;align-items:center;padding:6px 4px;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid var(--border)">';
-    html+='<input type="number" value="'+(row.strike||'')+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspUpdate('+row.id+',\'strike\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<input type="number" value="'+(row.strike||'')+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspUpdateStrike('+rowIdx+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
     html+='<div style="display:flex;align-items:center;gap:4px">'
-      +'<button onclick="var r=_cspRows.find(function(x){return x.id==='+row.id+'});if(r&&r.contracts>1){r.contracts--;cspCalcAndRender();}" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">-</button>'
+      +'<button onclick="cspDec('+rowIdx+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">-</button>'
       +'<span style="font-size:14px;font-weight:800;color:var(--blue);min-width:22px;text-align:center;font-family:DM Mono,monospace">'+row.contracts+'</span>'
-      +'<button onclick="var r=_cspRows.find(function(x){return x.id==='+row.id+'});if(r){r.contracts++;cspCalcAndRender();}" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
+      +'<button onclick="cspInc('+rowIdx+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
       +'</div>';
-    html+='<input type="number" value="'+(row.premium||'')+'" placeholder="1.20" step="0.01" oninput="cspUpdate('+row.id+',\'premium\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<input type="number" value="'+(row.premium||'')+'" placeholder="1.20" step="0.01" oninput="cspUpdatePremium('+rowIdx+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
     html+='<div style="font-size:13px;font-weight:700;color:var(--green);font-family:DM Mono,monospace;text-align:right">'+(premTot>0?'+$'+premTot.toFixed(2):'-')+'</div>';
     html+=col5html;
     html+='<button onclick="cspRemove('+rowIdx+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;font-family:DM Mono,monospace">x</button>';
@@ -6477,7 +6479,7 @@ function cspFetchChain(){
   _cspTicker=tk;
   if(_cspMode==='call') cspAutoFillFromHoldings(tk);
   var btn=$d('csp-fetch-btn'),st=$d('csp-chain-status');
-  if(btn){btn.disabled=true;btn.textContent='.....';}
+  if(btn){btn.disabled=true;btn.textContent='[..]...';}
   if(st)st.innerHTML='<span style="color:var(--blue)">Loading...</span>';
   var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
   var p=isLocal?fetch('/options?ticker='+encodeURIComponent(tk)).then(function(r){if(!r.ok)throw 0;return r.json();}):tryProxies('https://query1.finance.yahoo.com/v7/finance/options/'+tk+'?formatted=false');
@@ -6509,7 +6511,7 @@ function cspLoadExpiry(){
   var sel=$d('csp-expiry-sel');if(!sel)return;
   var expiry=sel.value;if(!expiry||!_cspTicker)return;
   var tableWrap=$d('csp-chain-table');
-  if(tableWrap)tableWrap.innerHTML='<div style="color:var(--text3);font-size:11px;font-family:DM Mono,monospace;padding:8px">~ Loading...</div>';
+  if(tableWrap)tableWrap.innerHTML='<div style="color:var(--text3);font-size:11px;font-family:DM Mono,monospace;padding:8px">[~] Loading...</div>';
   var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
   var epoch=dateToEpoch(expiry);
   var p=isLocal?fetch('/options?ticker='+encodeURIComponent(_cspTicker)+'&date='+epoch).then(function(r){if(!r.ok)throw 0;return r.json();}):tryProxies('https://query1.finance.yahoo.com/v7/finance/options/'+_cspTicker+'?date='+epoch+'&formatted=false');
@@ -6578,9 +6580,32 @@ function cspUseStrike(strike,mid){
 
 // == SMART BUDGET OPTIMIZER ==
 function optBudgetPresets(){
-  // Sync ticker between optimizer and manual builder
   var optTk=$d('opt-ticker'),cspTk=$d('csp-ticker');
-  if(optTk&&optTk.value&&cspTk&&!cspTk.value) cspTk.value=optTk.value;
+  var tk=(optTk&&optTk.value||'').toUpperCase();
+  // Sync ticker to manual builder
+  if(tk&&cspTk&&!cspTk.value) cspTk.value=tk;
+  // Auto-fill adjCB and price from holdings
+  if(tk){
+    var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk){
+      var h=HOLDINGS[hk];
+      var oac=$d('opt-adj-cb');
+      var adj=h.adjCB!=null?h.adjCB:(h.origCB||0);
+      if(oac&&!oac.value&&adj>0) oac.value=adj;
+      if(h.currentPrice&&h.currentPrice>0) _cspLivePrice=h.currentPrice;
+    }
+  }
+}
+
+function optSetBudget(amount){
+  var el=$d('opt-budget');
+  if(el) el.value=String(amount);
+  optBudgetPresets();
+  optRunOptimizer();
+  setTimeout(function(){
+    var r=$d('opt-results');
+    if(r&&r.style.display!=='none') r.scrollIntoView({behavior:'smooth',block:'nearest'});
+  },150);
 }
 
 function optFetchAndRun(){
@@ -6591,7 +6616,7 @@ function optFetchAndRun(){
   if(_cspMode==='call') cspAutoFillFromHoldings(tk);
 
   var btn=$d('opt-live-btn'),st=$d('opt-status');
-  if(btn){btn.disabled=true;btn.textContent='.. Loading chain...';}
+  if(btn){btn.disabled=true;btn.textContent='[..] Loading chain...';}
   if(st)st.innerHTML='<span style="color:var(--blue)">Fetching live options...</span>';
 
   var isLocal=location.hostname==='localhost'||location.hostname==='127.0.0.1';
@@ -6631,19 +6656,21 @@ function optFetchAndRun(){
 function optRunOptimizer(forcedExpiry){
   try {
     _optRunOptimizerCore(forcedExpiry);
+    // Show message if core didn't set any results
     var res2=$d('opt-results');
     if(res2&&(res2.style.display==='none'||!res2.innerHTML)){
       res2.style.display='block';
-      res2.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:11px">Enter ticker + Adj CB above, then Optimize. Or type strikes in the manual builder below.</div>';
+      res2.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:11px">Enter Adj CB and budget, then click Optimize.</div>';
     }
   } catch(e){
     var res2=$d('opt-results');
-    if(res2){res2.style.display='block';res2.innerHTML='<div style="padding:14px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red)">Error: '+e.message+'</div></div>';}
+    if(res2){res2.style.display='block';res2.innerHTML='<div style="padding:14px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">Error: '+e.message+'</div></div>';}
     console.error('optRunOptimizer:',e);
   }
 }
 function _optRunOptimizerCore(forcedExpiry){
   var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
+  var st=$d('opt-status');if(st)st.innerHTML='';  // clear any previous status
   var tk=($d('opt-ticker')&&$d('opt-ticker').value||'').toUpperCase()||_cspTicker||'';
   var adjCB=parseFloat(($d('opt-adj-cb')&&$d('opt-adj-cb').value)||0)||0;
   var sharesHeld=parseFloat(($d('opt-shares-held')&&$d('opt-shares-held').value)||0)||0;
@@ -6653,13 +6680,14 @@ function _optRunOptimizerCore(forcedExpiry){
 
   if(!budget){res.style.display='none';res.innerHTML='';return;}
 
-  // Auto-fill adjCB/shares from holdings if not set
-  if(tk&&(!adjCB||(!sharesHeld&&isCall))){
+  // Auto-fill adjCB/shares/price from holdings
+  if(tk){
     var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
     if(hk){
       var hld=HOLDINGS[hk];
-      if(!adjCB) adjCB=hld.adjCB!=null?hld.adjCB:(hld.origCB||0);
+      if(!adjCB){adjCB=hld.adjCB!=null?hld.adjCB:(hld.origCB||0);}
       if(!sharesHeld) sharesHeld=hld.shares||0;
+      if(!_cspLivePrice&&hld.currentPrice>0) _cspLivePrice=hld.currentPrice;
       if(adjCB&&$d('opt-adj-cb')&&!$d('opt-adj-cb').value){$d('opt-adj-cb').value=adjCB;}
       if(sharesHeld&&$d('opt-shares-held')&&!$d('opt-shares-held').value){$d('opt-shares-held').value=sharesHeld;}
     }
@@ -6691,18 +6719,29 @@ function _optRunOptimizerCore(forcedExpiry){
     });
   }
 
-  // Market-closed fallbacks for liveP
-  if(!liveP&&tk&&typeof PRICE_CACHE!=='undefined'&&PRICE_CACHE[tk]>0) liveP=PRICE_CACHE[tk];
+  // If no live price, try to get from holdings or use adjCB as reference
   if(!liveP&&tk){
     var hk2=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
     if(hk2) liveP=HOLDINGS[hk2].currentPrice||0;
   }
+  // Still no price - estimate from adj CB (user likely selling near their CB)
   if(!liveP&&adjCB>0) liveP=adjCB*1.05;
+  // Last resort: try origCB from holdings as price proxy
   if(!liveP&&tk){
     var hk3=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
-    if(hk3){var h3=HOLDINGS[hk3];liveP=h3.currentPrice||h3.adjCB||h3.origCB||0;if(liveP>0&&!adjCB){adjCB=h3.adjCB||h3.origCB||0;var oac3=$d('opt-adj-cb');if(oac3&&!oac3.value&&adjCB>0)oac3.value=adjCB;}}
+    if(hk3){var h3=HOLDINGS[hk3];liveP=h3.currentPrice||h3.adjCB||h3.origCB||0;if(liveP>0&&!adjCB)adjCB=h3.adjCB||h3.origCB||0;}
   }
-
+  // If still no price, show helpful prompt
+  if(!liveP){
+    res.style.display='block';
+    res.innerHTML='<div style="padding:14px 16px;background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:var(--r);font-family:DM Mono,monospace">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:8px">Enter Adj CB to optimize</div>'
+      +'<div style="font-size:11px;color:var(--text2);line-height:1.8">No stock price found for <strong>'+(tk||'this ticker')+'</strong>. The optimizer needs a reference price to generate strikes.<br><br>'
+      +'<strong>Option 1:</strong> Enter your Adj CB / sh above - optimizer estimates strikes around it.<br>'
+      +'<strong>Option 2:</strong> Click <strong>[Live] Live + Optimize</strong> to fetch real options chain data.</div>'
+      +'</div>';
+    return;
+  }
   if(!candidates.length && liveP>0){
     // Estimate from IV if no live chain - generate synthetic strikes
     var baseIV=60; // default 60% IV estimate
@@ -6715,9 +6754,11 @@ function _optRunOptimizerCore(forcedExpiry){
     }
     strikes.forEach(function(strike){
       var otmPct=liveP>0?(isCall?r2((strike-liveP)/liveP*100):r2((liveP-strike)/liveP*100)):5;
-      var ivWeekly=baseIV/100/Math.sqrt(52);
+      // Simple premium estimate: IV-based without Black-Scholes
+      var dte=7,ivWeekly=baseIV/100/Math.sqrt(52);
       var intr=isCall?Math.max(0,liveP-strike):Math.max(0,strike-liveP);
-      var mid=r2(Math.max(0.05,intr+strike*ivWeekly*0.4));
+      var ext=r2(strike*ivWeekly*0.4); // time value estimate
+      var mid=r2(Math.max(0.05,intr+ext));
       var maxCt=isCall?Math.floor((sharesHeld||9999)/100):Math.floor(budget/(strike*100));
       if(maxCt<1)return;
       candidates.push({strike:strike,premium:mid,iv:baseIV,otmPct:otmPct,maxContracts:maxCt,live:false});
@@ -6726,7 +6767,11 @@ function _optRunOptimizerCore(forcedExpiry){
 
   if(!candidates.length){
     res.style.display='block';
-    res.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:12px">[!] Enter a ticker with a live price, or click [Live] Live + Optimize to load real chain data.</div>';
+    res.innerHTML='<div style="padding:14px 16px;background:rgba(245,200,66,0.08);border:1px solid rgba(245,200,66,0.3);border-radius:var(--r);font-family:DM Mono,monospace">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px">No price data for '+tk+'</div>'
+      +'<div style="font-size:11px;color:var(--text2);line-height:1.7">To optimize without live data: enter your <strong>Adj CB</strong> above - the optimizer will estimate strikes around it.<br>'
+      +'Or click <strong>[Live] Live + Optimize</strong> to fetch real options chain data.</div>'
+      +'</div>';
     return;
   }
 
@@ -6935,15 +6980,21 @@ function _optRunOptimizerCore(forcedExpiry){
     html+='</div>';
 
     // Use This button
-    html+='<button onclick="optUseSolution('+rank+')" style="margin-top:12px;width:100%;padding:7px;font-size:12px;font-weight:700;background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.3);border-radius:6px;color:var(--green);cursor:pointer;font-family:DM Mono,monospace"> Use in Manual Builder</button>';
+    html+='<button onclick="optUseSolution('+rank+')" style="margin-top:12px;width:100%;padding:7px;font-size:12px;font-weight:700;background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.3);border-radius:6px;color:var(--green);cursor:pointer;font-family:DM Mono,monospace">? Use in Manual Builder</button>';
     html+='</div>';
   });
   html+='</div></div>';
 
   // Store solutions for "Use" button
   window._optSolutions=top;
-  res.innerHTML=html;
-  res.style.display='block';
+  // Re-query to make sure we have the current DOM element
+  var resNow=$d('opt-results');
+  if(resNow){
+    resNow.innerHTML=html;
+    resNow.style.display='block';
+    setTimeout(function(){resNow.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
+  }
+  if(typeof console!=='undefined') console.log('OPT DONE: html='+html.length+' res='+(resNow?'found':'NULL'));
 }
 
 function optUseSolution(rank){
@@ -6965,6 +7016,7 @@ function optUseSolution(rank){
   setTimeout(function(){
     if($d('csp-rows')){
       cspSetMode('put');
+      // Ensure all fields start blank
       var ot=$d('opt-ticker');if(ot)ot.value='';
       var ob=$d('opt-budget');if(ob)ob.value='';
       var oac=$d('opt-adj-cb');if(oac)oac.value='';
@@ -7394,7 +7446,7 @@ function runStockAnalysis(){
   if(!key){ if(keyPrompt)keyPrompt.style.display='block'; return; }
   if(keyPrompt)keyPrompt.style.display='none';
 
-  body.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3);font-family:\'DM Mono\',monospace">~ Loading '+ticker+' analysis?</div>';
+  body.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text3);font-family:\'DM Mono\',monospace">[~] Loading '+ticker+' analysis?</div>';
 
   var base = 'https://finnhub.io/api/v1';
   var results = {};
@@ -7491,7 +7543,7 @@ function renderStockAnalysis(ticker, r){
   function rsiLabel(v){ if(v==null)return{l:'-',c:'var(--text3)',s:'No data'}; if(v>70)return{l:'Overbought ('+v+')',c:'var(--red)',s:'RSI above 70 - stock may be overextended, consider tighter strikes'}; if(v<30)return{l:'Oversold ('+v+')',c:'var(--green)',s:'RSI below 30 - potential bounce, could be good CSP entry'}; return{l:'Neutral ('+v+')',c:'var(--amber)',s:'RSI between 30-70 - no extreme signal, normal range'}; }
   function maLabel(above,period){ if(above==null)return{l:'-',c:'var(--text3)',s:'Not enough data'}; if(above)return{l:'Above '+period+'MA ?',c:'var(--green)',s:'Price above '+period+'-day average - uptrend, calls are safer'}; return{l:'Below '+period+'MA ?',c:'var(--red)',s:'Price below '+period+'-day average - downtrend, be cautious with CSPs'}; }
   function macdLabel(v){ if(v==null)return{l:'-',c:'var(--text3)',s:'Not enough data'}; if(v>0)return{l:'Bullish ('+v+')',c:'var(--green)',s:'MACD positive - momentum is upward, good for covered calls'}; return{l:'Bearish ('+v+')',c:'var(--red)',s:'MACD negative - momentum is downward, wait before selling puts'}; }
-  function volLabel(up){ if(up==null)return{l:'-',c:'var(--text3)',s:'Not enough data'}; if(up)return{l:'Rising ?',c:'var(--green)',s:'Volume increasing - moves are more reliable and confirmed'}; return{l:'Declining ',c:'var(--amber)',s:'Volume declining - weaker conviction, moves may reverse'}; }
+  function volLabel(up){ if(up==null)return{l:'-',c:'var(--text3)',s:'Not enough data'}; if(up)return{l:'Rising ?',c:'var(--green)',s:'Volume increasing - moves are more reliable and confirmed'}; return{l:'Declining ?',c:'var(--amber)',s:'Volume declining - weaker conviction, moves may reverse'}; }
   function peLabel(v){ if(v==null||isNaN(v)||v<=0)return{l:'N/A',c:'var(--text3)',s:'No positive earnings - common for growth/speculative stocks'}; if(v<15)return{l:v.toFixed(1)+'x - Cheap',c:'var(--green)',s:'P/E under 15 is considered value territory'}; if(v<30)return{l:v.toFixed(1)+'x - Fair',c:'var(--amber)',s:'P/E 15-30 is reasonably valued for a growing company'}; return{l:v.toFixed(1)+'x - Expensive',c:'var(--red)',s:'P/E above 30 - market pricing in high growth expectations'}; }
 
   var rsiR=rsiLabel(rsi), macdR=macdLabel(macd), ma20R=maLabel(above20ma,20), ma50R=maLabel(above50ma,50), volR=volLabel(volumeTrend);
@@ -7805,7 +7857,7 @@ function renderStockAnalysis(ticker, r){
       var last=revenues[revenues.length-1], prev=revenues[revenues.length-2];
       var trendPct=prev?Math.round((last-prev)/Math.abs(prev)*100):0;
       var trendColor=trendPct>=0?'var(--green)':'var(--red)';
-      var trendIcon=trendPct>=0?'?':'';
+      var trendIcon=trendPct>=0?'?':'?';
       chartHtml+='<div style="font-size:12px;color:var(--text2);font-family:\'DM Mono\',monospace;margin-top:8px">'
         +'Revenue <span style="color:'+trendColor+';font-weight:700">'+trendIcon+' '+Math.abs(trendPct)+'%</span> vs prior quarter. '
         +(netIncomes[netIncomes.length-1]!=null?('Net income last quarter: <span style="color:'+(netIncomes[netIncomes.length-1]>=0?'var(--green)':'var(--red)')+'">$'+fmtN(netIncomes[netIncomes.length-1])+'</span>.'):'')
@@ -9607,7 +9659,7 @@ function loadNews(){
 
   if(_newsLoading) return;
   _newsLoading = true;
-  feed.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:13px">~ Loading news...</div>';
+  feed.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-family:\'DM Mono\',monospace;font-size:13px">[~] Loading news...</div>';
 
   var today = new Date();
   var from = new Date(today - 7*24*60*60*1000); // last 7 days
