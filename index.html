@@ -456,7 +456,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
         <div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Ticker</div>
-          <input id="opt-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase();optBudgetPresets();" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
+          <input id="opt-ticker" placeholder="e.g. IONQ" oninput="this.value=this.value.toUpperCase();optBudgetPresets();" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
         </div>
         <div>
           <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Budget ($)</div>
@@ -501,7 +501,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;font-family:DM Mono,monospace">Manual Strike Builder</div>
       <div style="display:flex;gap:6px;align-items:center">
-        <input id="csp-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase()" style="width:75px;padding:5px 8px;font-size:12px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
+        <input id="csp-ticker" placeholder="e.g. IONQ" oninput="this.value=this.value.toUpperCase()" style="width:75px;padding:5px 8px;font-size:12px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
         <div id="csp-shares-wrap" style="display:none;align-items:center;gap:4px">
           <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Shares:</span>
           <input id="csp-shares-held" type="number" placeholder="700" step="100" style="width:75px;padding:5px 8px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="cspCalcAndRender()"/>
@@ -6166,10 +6166,14 @@ function cspGetAdjCB(){
 }
 
 function cspReset(){
-  _cspLivePrice=0; _cspTicker='';
+  _cspLivePrice=0; _cspTicker=''; _optLiveChain={};
   var er=$d('csp-expiry-row');if(er)er.style.display='none';
   var st=$d('csp-chain-status');if(st)st.textContent='';
   var tk=$d('csp-ticker');if(tk)tk.value='';
+  var otk=$d('opt-ticker');if(otk)otk.value='';
+  var ob=$d('opt-budget');if(ob)ob.value='';
+  var oac=$d('opt-adj-cb');if(oac)oac.value='';
+  var ores=$d('opt-results');if(ores){ores.style.display='none';ores.innerHTML='';}
   var sh=$d('csp-shares-held');if(sh)sh.value='';
   var ac=$d('csp-adj-cb');if(ac)ac.value='';
   var mac=$d('csp-manual-adjcb');if(mac)mac.value='';
@@ -6651,11 +6655,21 @@ function optFetchAndRun(){
 
 function optRunOptimizer(forcedExpiry){
   var res2=$d('opt-results');
-  if(res2){res2.style.display='block';res2.innerHTML='<div style="padding:10px;color:var(--text3);font-family:DM Mono,monospace;font-size:11px">[~] Calculating...</div>';}
-  try { _optRunOptimizerCore(forcedExpiry); } catch(e){
-    if(res2){res2.style.display='block';res2.innerHTML='<div style="padding:14px 16px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px">Optimizer Error</div><div style="font-size:11px;color:var(--text2)">'+e.message+'</div></div>';}
-    console.error('optRunOptimizer error:', e);
-  }
+  if(!res2)return;
+  res2.style.display='block';
+  res2.innerHTML='<div style="padding:10px;color:var(--text3);font-family:DM Mono,monospace;font-size:11px">Calculating...</div>';
+  setTimeout(function(){
+    try {
+      _optRunOptimizerCore(forcedExpiry);
+      if(res2.innerHTML.indexOf('Calculating')>=0){
+        res2.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:11px">No results generated. Try entering Adj CB or click Live + Optimize.</div>';
+      }
+    } catch(e){
+      res2.style.display='block';
+      res2.innerHTML='<div style="padding:14px 16px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:6px">Error: '+e.message+'</div></div>';
+      console.error('optRunOptimizer error:',e);
+    }
+  },10);
 }
 function _optRunOptimizerCore(forcedExpiry){
   var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
@@ -6998,7 +7012,13 @@ function optUseSolution(rank){
 // Initialize
 (function(){
   setTimeout(function(){
-    if($d('csp-rows')) cspSetMode('put');
+    if($d('csp-rows')){
+      cspSetMode('put');
+      // Ensure all fields start blank
+      var ot=$d('opt-ticker');if(ot)ot.value='';
+      var ob=$d('opt-budget');if(ob)ob.value='';
+      var oac=$d('opt-adj-cb');if(oac)oac.value='';
+    }
   },600);
 })();
 
