@@ -6602,10 +6602,6 @@ function optSetBudget(amount){
   if(el) el.value=String(amount);
   optBudgetPresets();
   optRunOptimizer();
-  setTimeout(function(){
-    var r=$d('opt-results');
-    if(r&&r.style.display!=='none') r.scrollIntoView({behavior:'smooth',block:'nearest'});
-  },150);
 }
 
 function optFetchAndRun(){
@@ -6992,9 +6988,9 @@ function _optRunOptimizerCore(forcedExpiry){
   if(resNow){
     resNow.innerHTML=html;
     resNow.style.display='block';
-    setTimeout(function(){resNow.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
+  
   }
-  if(typeof console!=='undefined') console.log('OPT DONE: html='+html.length+' res='+(resNow?'found':'NULL'));
+
 }
 
 function optUseSolution(rank){
