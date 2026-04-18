@@ -6183,11 +6183,15 @@ function cspRemove(id){
   _cspRows=_cspRows.filter(function(r){return r.id!==id;});
   cspRender();
 }
+function cspInc(id){var r=_cspRows.find(function(x){return x.id===id;});if(r){r.contracts++;cspCalcAndRender();}}
+function cspDec(id){var r=_cspRows.find(function(x){return x.id===id;});if(r&&r.contracts>1){r.contracts--;cspCalcAndRender();}}
 function cspUpdate(id,field,val){
   var row=_cspRows.find(function(r){return r.id===id;});
   if(row) row[field]=parseFloat(val)||0;
   cspCalcAndRender();
 }
+function cspUpdateStrike(id,val){cspUpdate(id,'strike',val);}
+function cspUpdatePremium(id,val){cspUpdate(id,'premium',val);}
 
 // ── Manual row renderer ──
 function cspRender(){
@@ -6227,13 +6231,13 @@ function cspRender(){
         +'</div>';
     }
     html+='<div style="display:grid;grid-template-columns:110px 90px 90px 100px 1fr 24px;gap:8px;align-items:center;padding:6px 4px;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid var(--border)">';
-    html+='<input type="number" value="'+(row.strike||'')+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspUpdate('+row.id+',\'strike\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<input type="number" value="'+(row.strike||'')+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspUpdateStrike('+row.id+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
     html+='<div style="display:flex;align-items:center;gap:4px">'
-      +'<button onclick="var r=_cspRows.find(function(x){return x.id==='+row.id+'});if(r&&r.contracts>1){r.contracts--;cspCalcAndRender();}" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">−</button>'
+      +'<button onclick="cspDec('+row.id+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">−</button>'
       +'<span style="font-size:14px;font-weight:800;color:var(--blue);min-width:22px;text-align:center;font-family:DM Mono,monospace">'+row.contracts+'</span>'
-      +'<button onclick="var r=_cspRows.find(function(x){return x.id==='+row.id+'});if(r){r.contracts++;cspCalcAndRender();}" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
+      +'<button onclick="cspInc('+row.id+')" style="background:rgba(255,255,255,0.07);border:none;border-radius:4px;color:var(--text);cursor:pointer;padding:3px 8px;font-size:13px;font-family:DM Mono,monospace">+</button>'
       +'</div>';
-    html+='<input type="number" value="'+(row.premium||'')+'" placeholder="1.20" step="0.01" oninput="cspUpdate('+row.id+',\'premium\',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<input type="number" value="'+(row.premium||'')+'" placeholder="1.20" step="0.01" oninput="cspUpdatePremium('+row.id+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
     html+='<div style="font-size:13px;font-weight:700;color:var(--green);font-family:DM Mono,monospace;text-align:right">'+(premTot>0?'+$'+premTot.toFixed(2):'—')+'</div>';
     html+=col5html;
     html+='<button onclick="cspRemove('+row.id+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;font-family:DM Mono,monospace">✕</button>';
@@ -6671,6 +6675,13 @@ function optRunOptimizer(forcedExpiry){
     });
   }
 
+  // If no live price, try to get from holdings or use adjCB as reference
+  if(!liveP&&tk){
+    var hk2=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk2) liveP=HOLDINGS[hk2].currentPrice||0;
+  }
+  // Still no price — estimate from adj CB (user likely selling near their CB)
+  if(!liveP&&adjCB>0) liveP=adjCB*1.05; // assume stock ~5% above adj CB as reference
   if(!candidates.length && liveP>0){
     // Estimate from IV if no live chain — generate synthetic strikes
     var baseIV=60; // default 60% IV estimate
