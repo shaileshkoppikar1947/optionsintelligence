@@ -560,6 +560,21 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 
 </div>
 
+<!-- ══ SAVED PLANS ══ -->
+<div id="csp-plans-card" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px;margin-bottom:16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-family:'DM Mono',monospace">&#128196; Saved Strike Plans</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select id="plan-save-account" style="padding:6px 10px;font-size:12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'DM Mono',monospace;outline:none"></select>
+      <input id="plan-save-name" placeholder="Plan name (e.g. IONQ weekly)" style="padding:6px 10px;font-size:12px;width:200px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'DM Mono',monospace;outline:none"/>
+      <button onclick="cspSavePlan()" style="padding:6px 14px;font-size:12px;font-weight:700;background:var(--green);color:#000;border:none;border-radius:var(--r);cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap">&#128190; Save Current</button>
+    </div>
+  </div>
+  <div id="plans-list" style="display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;padding:12px;text-align:center">No saved plans yet. Build a strategy above and click Save Current.</div>
+  </div>
+</div>
+
 <!-- WHEEL CYCLES -->
 <div class="tab" id="tab-cycles">
   <div class="card">
@@ -6201,6 +6216,178 @@ function cspReset(){
   cspRender();
 }
 
+// ?? SAVED PLANS ??
+var CSP_PLANS_KEY = 'csp_strike_plans_v1';
+
+function cspLoadPlans(){
+  try{return JSON.parse(localStorage.getItem(CSP_PLANS_KEY)||'[]');}catch(e){return[];}
+}
+
+function cspSavePlans(plans){
+  try{localStorage.setItem(CSP_PLANS_KEY,JSON.stringify(plans));}catch(e){console.error('Save plans failed',e);}
+}
+
+function cspSavePlan(){
+  var nameEl=$d('plan-save-name');
+  var acctEl=$d('plan-save-account');
+  var name=(nameEl&&nameEl.value.trim())||'';
+  var acctId=(acctEl&&acctEl.value)||'';
+  var acctName=acctId&&ACCOUNTS[acctId]?ACCOUNTS[acctId].name:acctId||'No Account';
+
+  if(!name){alert('Enter a plan name first.');return;}
+  var activeRows=_cspRows.filter(function(r){return r.strike>0;});
+  if(!activeRows.length){alert('Add at least one strike row first.');return;}
+
+  var plans=cspLoadPlans();
+  var plan={
+    id: 'plan_'+Date.now(),
+    name: name,
+    acctId: acctId,
+    acctName: acctName,
+    mode: _cspMode,
+    ticker: ($d('csp-ticker')&&$d('csp-ticker').value)||'',
+    adjCB: ($d('csp-manual-adjcb')&&parseFloat($d('csp-manual-adjcb').value))||0,
+    rows: activeRows.map(function(r){return{strike:r.strike,contracts:r.contracts,premium:r.premium};}),
+    savedAt: new Date().toISOString()
+  };
+  // Calculate summary
+  var totalCash=0,totalPrem=0,totalCt=0;
+  plan.rows.forEach(function(r){totalCash=r2(totalCash+r.strike*r.contracts*100);totalPrem=r2(totalPrem+r.premium*r.contracts*100);totalCt+=r.contracts;});
+  plan.totalCash=totalCash; plan.totalPrem=totalPrem; plan.totalContracts=totalCt;
+  plan.blendedEffCB=totalCt>0?r2((totalCash-totalPrem)/(totalCt*100)):0;
+
+  plans.push(plan);
+  cspSavePlans(plans);
+  if(nameEl) nameEl.value='';
+  cspRenderPlans();
+  // Flash confirmation
+  var btn=document.querySelector('[onclick="cspSavePlan()"]');
+  if(btn){var orig=btn.textContent;btn.textContent='Saved!';setTimeout(function(){btn.textContent=orig;},1500);}
+}
+
+function cspDeletePlan(id){
+  if(!confirm('Delete this plan?')) return;
+  var plans=cspLoadPlans().filter(function(p){return p.id!==id;});
+  cspSavePlans(plans);
+  cspRenderPlans();
+}
+
+function cspLoadPlan(id){
+  var plans=cspLoadPlans();
+  var plan=plans.find(function(p){return p.id===id;});
+  if(!plan)return;
+  // Load into manual builder
+  cspSetMode(plan.mode||'put');
+  if($d('csp-ticker')&&plan.ticker) $d('csp-ticker').value=plan.ticker;
+  if($d('csp-manual-adjcb')&&plan.adjCB) $d('csp-manual-adjcb').value=plan.adjCB;
+  _cspNextId=1;
+  _cspRows=plan.rows.map(function(r){return{id:_cspNextId++,strike:r.strike,contracts:r.contracts,premium:r.premium};});
+  // Add a blank row at end for easy adding
+  _cspRows.push({id:_cspNextId++,strike:0,contracts:1,premium:0});
+  cspRender();
+  // Scroll to builder
+  var card=$d('csp-calc-card');
+  if(card) card.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function cspEditPlanName(id){
+  var plans=cspLoadPlans();
+  var plan=plans.find(function(p){return p.id===id;});
+  if(!plan)return;
+  var newName=prompt('Rename plan:',plan.name);
+  if(!newName||!newName.trim())return;
+  plan.name=newName.trim();
+  cspSavePlans(plans);
+  cspRenderPlans();
+}
+
+function cspEditPlanAccount(id, newAcctId){
+  var plans=cspLoadPlans();
+  var plan=plans.find(function(p){return p.id===id;});
+  if(!plan)return;
+  plan.acctId=newAcctId;
+  plan.acctName=newAcctId&&ACCOUNTS[newAcctId]?ACCOUNTS[newAcctId].name:newAcctId||'No Account';
+  cspSavePlans(plans);
+  cspRenderPlans();
+}
+
+function cspRenderPlans(){
+  var container=$d('plans-list');
+  if(!container)return;
+  var plans=cspLoadPlans();
+
+  // Populate account dropdown
+  var acctSel=$d('plan-save-account');
+  if(acctSel){
+    acctSel.innerHTML='<option value="">No Account</option>';
+    Object.keys(ACCOUNTS).forEach(function(id){
+      acctSel.innerHTML+='<option value="'+id+'">'+ACCOUNTS[id].name+'</option>';
+    });
+  }
+
+  if(!plans.length){
+    container.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:DM Mono,monospace;padding:12px;text-align:center">No saved plans yet. Build a strategy above and click Save Current.</div>';
+    return;
+  }
+
+  // Group by account
+  var groups={};
+  plans.forEach(function(p){
+    var key=p.acctName||'No Account';
+    if(!groups[key])groups[key]=[];
+    groups[key].push(p);
+  });
+
+  var html='';
+  Object.keys(groups).sort().forEach(function(acctName){
+    html+='<div style="margin-bottom:10px">';
+    html+='<div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-family:DM Mono,monospace;padding:3px 0 6px;border-bottom:1px solid var(--border);margin-bottom:6px">'+acctName+'</div>';
+
+    groups[acctName].forEach(function(p){
+      var d=new Date(p.savedAt);
+      var dateStr=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      var modeColor=p.mode==='call'?'var(--green)':'var(--blue)';
+      var modeBadge=p.mode==='call'?'CC':'CSP';
+      var rowsSummary=p.rows.map(function(r){return'$'+r.strike+'x'+r.contracts+'ct';}).join(' / ');
+
+      // Build account options for inline dropdown
+      var acctOpts='<option value="">No Account</option>';
+      Object.keys(ACCOUNTS).forEach(function(id){
+        acctOpts+='<option value="'+id+'"'+(p.acctId===id?' selected':'')+'>'+ACCOUNTS[id].name+'</option>';
+      });
+
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);flex-wrap:wrap">';
+      // Mode badge
+      html+='<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(77,166,255,0.15);color:'+modeColor+';font-family:DM Mono,monospace;flex-shrink:0">'+modeBadge+'</span>';
+      // Plan name (editable on click)
+      html+='<div style="flex:1;min-width:120px">';
+      html+='<div style="font-size:13px;font-weight:700;color:var(--text);font-family:DM Mono,monospace;cursor:pointer" onclick="cspEditPlanName(''+p.id+'')" title="Click to rename">'+p.name+'</div>';
+      html+='<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-top:2px">'+(p.ticker?p.ticker+' &bull; ':'')+rowsSummary+'</div>';
+      html+='</div>';
+      // Summary numbers
+      html+='<div style="text-align:right;flex-shrink:0">';
+      html+='<div style="font-size:12px;font-weight:700;color:var(--green);font-family:DM Mono,monospace">+$'+p.totalPrem.toFixed(2)+'</div>';
+      html+='<div style="font-size:10px;color:var(--amber);font-family:DM Mono,monospace">$'+p.totalCash.toLocaleString('en-US',{minimumFractionDigits:0})+'</div>';
+      html+='</div>';
+      // Account selector
+      html+='<select onchange="cspEditPlanAccount(''+p.id+'',this.value)" style="padding:4px 6px;font-size:11px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:DM Mono,monospace;outline:none;max-width:130px">'+acctOpts+'</select>';
+      // Date
+      html+='<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;flex-shrink:0">'+dateStr+'</div>';
+      // Action buttons
+      html+='<div style="display:flex;gap:4px;flex-shrink:0">';
+      html+='<button onclick="cspLoadPlan(''+p.id+'')" style="padding:4px 10px;font-size:11px;font-weight:700;background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.3);border-radius:var(--r);color:var(--green);cursor:pointer;font-family:DM Mono,monospace;white-space:nowrap">Load</button>';
+      html+='<button onclick="cspDeletePlan(''+p.id+'')" style="padding:4px 8px;font-size:11px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.25);border-radius:var(--r);color:var(--red);cursor:pointer;font-family:DM Mono,monospace">&#215;</button>';
+      html+='</div>';
+      html+='</div>';
+    });
+
+    html+='</div>';
+  });
+
+  container.innerHTML=html;
+}
+
+
 function cspAddRow(){
   _cspRows.push({id:_cspNextId++,strike:0,contracts:1,premium:0});
   cspRender();
@@ -7053,6 +7240,7 @@ function optUseSolution(rank){
   setTimeout(function(){
     if($d('csp-rows')){
       cspSetMode('put');
+      cspRenderPlans();
     }
   },600);
 })();
