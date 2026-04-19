@@ -548,7 +548,6 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div id="scout-result"></div>
     <div style="margin-top:8px;font-size:10px;color:var(--text3);font-family:DM Mono,monospace">⚠ IV estimates — verify live in Strike Advisor before trading.</div>
   </div>
-</div>
 
 <div id="csp-plans-card" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 20px;margin-bottom:16px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
@@ -563,7 +562,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;padding:12px;text-align:center">No saved plans yet. Build a strategy above and click Save Current.</div>
   </div>
 </div>
-
+</div>
 
 <!-- WHEEL CYCLES -->
 <div class="tab" id="tab-cycles">
@@ -6131,6 +6130,11 @@ var _optLiveChain = {}; // cached puts/calls by expiry for optimizer
 // -- Mode toggle --
 function cspSetMode(mode){
   _cspMode = mode;
+  var bp=$d('mode-btn-put'),bc=$d('mode-btn-call');
+  if(bp){bp.style.background=mode==='put'?'var(--green)':'';bp.style.color=mode==='put'?'#000':'';}
+  if(bc){bc.style.background=mode==='call'?'var(--green)':'';bc.style.color=mode==='call'?'#000':'';}
+  var desc=$d('csp-desc');
+  if(desc){desc.innerHTML=mode==='put'?'<strong style="color:var(--blue)">Cash-Secured Put:</strong> Sell puts, hold cash to buy shares if assigned. Type any strike + premium.':'<strong style="color:var(--green)">Covered Call:</strong> Sell calls against shares you own. Enter strikes above your cost basis.';}
   var putBtn=$d('csp-mode-put'), callBtn=$d('csp-mode-call');
   if(putBtn){putBtn.style.background=mode==='put'?'var(--blue-d)':'transparent';putBtn.style.color=mode==='put'?'var(--blue)':'var(--text3)';}
   if(callBtn){callBtn.style.background=mode==='call'?'rgba(0,200,150,0.15)':'transparent';callBtn.style.color=mode==='call'?'var(--green)':'var(--text3)';}
@@ -6171,15 +6175,99 @@ function cspGetAdjCB(){
 }
 
 function cspReset(){
-  _cspLivePrice=0; _cspTicker='';
+  _cspLivePrice=0;_cspTicker='';
+  if(typeof _optLiveChain!=='undefined')_optLiveChain={};
+  ['csp-ticker','csp-manual-adjcb','csp-adj-cb','csp-shares-held'].forEach(function(id){var el=$d(id);if(el)el.value='';});
   var er=$d('csp-expiry-row');if(er)er.style.display='none';
+  var csw=$d('csp-chain-status-wrap');if(csw)csw.style.display='none';
+  var ct=$d('csp-chain-table');if(ct)ct.innerHTML='';
   var st=$d('csp-chain-status');if(st)st.textContent='';
-  var tk=$d('csp-ticker');if(tk)tk.value='';
-  var sh=$d('csp-shares-held');if(sh)sh.value='';
-  var ac=$d('csp-adj-cb');if(ac)ac.value='';
-  var mac=$d('csp-manual-adjcb');if(mac)mac.value='';
-  cspSetMode(_cspMode);
+  var res=$d('csp-results');if(res){res.style.display='none';res.innerHTML='';}
+  var tot=$d('csp-totals-row');if(tot)tot.style.display='none';
+  ['opt-ticker','opt-budget','opt-adj-cb'].forEach(function(id){var el=$d(id);if(el)el.value='';});
+  var ores=$d('opt-results');if(ores){ores.style.display='none';ores.innerHTML='';}
+  _cspNextId=1;
+  _cspRows=[{id:_cspNextId++,strike:0,contracts:1,premium:0},{id:_cspNextId++,strike:0,contracts:1,premium:0},{id:_cspNextId++,strike:0,contracts:1,premium:0}];
+  cspRender();
 }
+// == SAVED PLANS ==
+var CSP_PLANS_KEY='csp_strike_plans_v1';
+function cspLoadPlans(){try{return JSON.parse(localStorage.getItem(CSP_PLANS_KEY)||'[]');}catch(e){return[];}}
+function _savePlansData(p){try{localStorage.setItem(CSP_PLANS_KEY,JSON.stringify(p));}catch(e){console.error(e);}}
+function cspSavePlan(){
+  var nameEl=$d('plan-save-name'),acctEl=$d('plan-save-account');
+  var name=(nameEl&&nameEl.value.trim())||'';
+  var acctId=(acctEl&&acctEl.value)||'';
+  var acctName=acctId&&ACCOUNTS[acctId]?ACCOUNTS[acctId].name:acctId||'No Account';
+  if(!name){alert('Enter a plan name first.');return;}
+  var active=_cspRows.filter(function(r){return r.strike>0;});
+  if(!active.length){alert('Add at least one strike row first.');return;}
+  var plans=cspLoadPlans(),tc=0,tp=0,tca=0;
+  active.forEach(function(r){tc+=r.contracts;tp=r2(tp+r.premium*r.contracts*100);tca=r2(tca+r.strike*r.contracts*100);});
+  plans.push({id:'plan_'+Date.now(),name:name,acctId:acctId,acctName:acctName,mode:_cspMode,
+    ticker:($d('csp-ticker')&&$d('csp-ticker').value)||'',
+    adjCB:($d('csp-manual-adjcb')&&parseFloat($d('csp-manual-adjcb').value))||0,
+    rows:active.map(function(r){return{strike:r.strike,contracts:r.contracts,premium:r.premium};}),
+    totalCash:tca,totalPrem:tp,totalContracts:tc,savedAt:new Date().toISOString()});
+  _savePlansData(plans);
+  if(nameEl)nameEl.value='';
+  cspRenderPlans();
+  var btn=document.querySelector('[onclick="cspSavePlan()"]');
+  if(btn){var o=btn.textContent;btn.textContent='Saved!';setTimeout(function(){btn.textContent=o;},1500);}
+}
+function cspDeletePlan(id){if(!confirm('Delete this plan?'))return;_savePlansData(cspLoadPlans().filter(function(p){return p.id!==id;}));cspRenderPlans();}
+function cspLoadPlan(id){
+  var plan=cspLoadPlans().find(function(p){return p.id===id;});if(!plan)return;
+  cspSetMode(plan.mode||'put');
+  if($d('csp-ticker')&&plan.ticker)$d('csp-ticker').value=plan.ticker;
+  if($d('csp-manual-adjcb')&&plan.adjCB)$d('csp-manual-adjcb').value=plan.adjCB;
+  _cspNextId=1;
+  _cspRows=plan.rows.map(function(r){return{id:_cspNextId++,strike:r.strike,contracts:r.contracts,premium:r.premium};});
+  _cspRows.push({id:_cspNextId++,strike:0,contracts:1,premium:0});
+  cspRender();
+  var c=$d('csp-calc-card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cspEditPlanName(id){
+  var plans=cspLoadPlans(),plan=plans.find(function(p){return p.id===id;});if(!plan)return;
+  var n=prompt('Rename plan:',plan.name);if(!n||!n.trim())return;
+  plan.name=n.trim();_savePlansData(plans);cspRenderPlans();
+}
+function cspEditPlanAccount(id,acctId){
+  var plans=cspLoadPlans(),plan=plans.find(function(p){return p.id===id;});if(!plan)return;
+  plan.acctId=acctId;plan.acctName=acctId&&ACCOUNTS[acctId]?ACCOUNTS[acctId].name:acctId||'No Account';
+  _savePlansData(plans);cspRenderPlans();
+}
+function cspRenderPlans(){
+  var container=$d('plans-list');if(!container)return;
+  var plans=cspLoadPlans();
+  var acctSel=$d('plan-save-account');
+  if(acctSel){acctSel.innerHTML='<option value="">No Account</option>';Object.keys(ACCOUNTS).forEach(function(id){acctSel.innerHTML+='<option value="'+id+'">'+ACCOUNTS[id].name+'</option>';});}
+  if(!plans.length){container.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:DM Mono,monospace;padding:12px;text-align:center">No saved plans yet. Build a strategy above and click Save Current.</div>';return;}
+  var groups={};
+  plans.forEach(function(p){var k=p.acctName||'No Account';if(!groups[k])groups[k]=[];groups[k].push(p);});
+  var html='';
+  Object.keys(groups).sort().forEach(function(gName){
+    html+='<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-family:DM Mono,monospace;padding:3px 0 6px;border-bottom:1px solid var(--border);margin-bottom:6px">'+gName+'</div>';
+    groups[gName].forEach(function(p){
+      var ds=new Date(p.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      var rs=p.rows.map(function(r){return'$'+r.strike+'x'+r.contracts+'ct';}).join(' / ');
+      var mc=p.mode==='call'?'var(--green)':'var(--blue)';
+      var ao='<option value="">No Account</option>';
+      Object.keys(ACCOUNTS).forEach(function(id){ao+='<option value="'+id+'"'+(p.acctId===id?' selected':'')+'>'+ACCOUNTS[id].name+'</option>';});
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);flex-wrap:wrap">';
+      html+='<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(77,166,255,0.15);color:'+mc+';font-family:DM Mono,monospace">'+(p.mode==='call'?'CC':'CSP')+'</span>';
+      html+='<div style="flex:1;min-width:120px"><div style="font-size:13px;font-weight:700;color:var(--text);font-family:DM Mono,monospace;cursor:pointer" onclick="cspEditPlanName(''+p.id+'')">'+p.name+'</div><div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-top:2px">'+(p.ticker?p.ticker+' &bull; ':'')+rs+'</div></div>';
+      html+='<div style="text-align:right"><div style="font-size:12px;font-weight:700;color:var(--green);font-family:DM Mono,monospace">+$'+p.totalPrem.toFixed(2)+'</div><div style="font-size:10px;color:var(--amber);font-family:DM Mono,monospace">$'+p.totalCash.toLocaleString('en-US',{minimumFractionDigits:0})+'</div></div>';
+      html+='<select onchange="cspEditPlanAccount(''+p.id+'',this.value)" style="padding:4px 6px;font-size:11px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:DM Mono,monospace;outline:none;max-width:130px">'+ao+'</select>';
+      html+='<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">'+ds+'</div>';
+      html+='<div style="display:flex;gap:4px"><button onclick="cspLoadPlan(''+p.id+'')" style="padding:4px 10px;font-size:11px;font-weight:700;background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.3);border-radius:var(--r);color:var(--green);cursor:pointer;font-family:DM Mono,monospace">Load</button><button onclick="cspDeletePlan(''+p.id+'')" style="padding:4px 8px;font-size:11px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.25);border-radius:var(--r);color:var(--red);cursor:pointer;font-family:DM Mono,monospace">&#215;</button></div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
 
 function cspAddRow(){
   _cspRows.push({id:_cspNextId++,strike:0,contracts:1,premium:0});
@@ -6200,50 +6288,43 @@ function cspUpdate(idx,field,val){if(_cspRows[idx])_cspRows[idx][field]=parseFlo
 
 // -- Manual row renderer --
 function cspRender(){
-  var wrap=$d('csp-rows');
-  if(!wrap)return;
+  var wrap=$d('csp-rows');if(!wrap)return;
   var isCall=_cspMode==='call';
   var adjCB=cspGetAdjCB();
   var html='';
-
   _cspRows.forEach(function(row,idx){
-    var strikeVal=row.strike>0?row.strike:'';
-    var premVal=row.premium>0?row.premium:'';
-    var premTot=row.strike>0&&row.premium>0?r2(row.premium*row.contracts*100):null;
-    var cashTot=row.strike>0?r2(row.strike*row.contracts*100):null;
-    var effCB=row.strike>0&&row.premium>0?r2(row.strike-row.premium):null;
-    var aboveCB=adjCB>0&&row.strike>0&&(isCall?row.strike>=adjCB:row.strike<=adjCB);
-
-    var premHtml=premTot!=null
-      ?'<div style="font-size:13px;font-weight:700;color:var(--green)">+$'+premTot.toFixed(2)+'</div>'
-      :'<div style="color:var(--text3);font-size:12px">-</div>';
-
-    var cashHtml='';
-    if(cashTot!=null){
-      cashHtml='<div style="font-size:13px;font-weight:700;color:var(--amber)">$'+cashTot.toLocaleString('en-US',{minimumFractionDigits:2})+'</div>';
-      if(effCB!=null) cashHtml+='<div style="font-size:10px;color:'+(aboveCB?'var(--green)':'var(--text3)')+'">eff CB $'+effCB.toFixed(2)+'/sh</div>';
-    } else { cashHtml='<div style="color:var(--text3);font-size:12px">-</div>'; }
-
+    var sv=row.strike>0?row.strike:'',pv=row.premium>0?row.premium:'';
+    var pt=row.strike>0&&row.premium>0?r2(row.premium*row.contracts*100):null;
+    var ct=row.strike>0?r2(row.strike*row.contracts*100):null;
+    var eff=row.strike>0&&row.premium>0?r2(row.strike-row.premium):null;
+    var above=adjCB>0&&row.strike>0&&(isCall?row.strike>=adjCB:row.strike<=adjCB);
+    var ph=pt!=null?'<div style="font-size:13px;font-weight:700;color:var(--green)">+$'+pt.toFixed(2)+'</div>':'<div style="color:var(--text3);font-size:12px">-</div>';
+    var ch=ct!=null?'<div style="font-size:13px;font-weight:700;color:var(--amber)">$'+ct.toLocaleString('en-US',{minimumFractionDigits:2})+'</div>'+(eff!=null?'<div style="font-size:10px;color:'+(above?'var(--green)':'var(--text3)')+'">eff CB $'+eff.toFixed(2)+'/sh</div>':''):'<div style="color:var(--text3);font-size:12px">-</div>';
     html+='<div style="display:grid;grid-template-columns:110px 110px 110px 100px 140px 24px;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)">';
-    html+='<input type="number" value="'+strikeVal+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspRowStrike('+idx+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
-    html+='<div style="display:flex;align-items:center;justify-content:center;gap:4px">'
-      +'<button onclick="cspRowDec('+idx+')" style="background:rgba(255,255,255,0.08);border:none;border-radius:4px;color:var(--text);cursor:pointer;width:28px;height:28px;font-size:16px;display:flex;align-items:center;justify-content:center">&#8722;</button>'
-      +'<span style="font-size:14px;font-weight:800;color:var(--blue);min-width:24px;text-align:center">'+row.contracts+'</span>'
-      +'<button onclick="cspRowInc('+idx+')" style="background:rgba(255,255,255,0.08);border:none;border-radius:4px;color:var(--text);cursor:pointer;width:28px;height:28px;font-size:16px;display:flex;align-items:center;justify-content:center">+</button>'
-      +'</div>';
-    html+='<input type="number" value="'+premVal+'" placeholder="1.20" step="0.01" oninput="cspRowPrem('+idx+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
-    html+='<div>'+premHtml+'</div>';
-    html+='<div>'+cashHtml+'</div>';
+    html+='<input type="number" value="'+sv+'" placeholder="'+(isCall?'50':'45')+'" step="0.5" oninput="cspRowStrike('+idx+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<div style="display:flex;align-items:center;justify-content:center;gap:4px"><button onclick="cspRowDec('+idx+')" style="background:rgba(255,255,255,0.08);border:none;border-radius:4px;color:var(--text);cursor:pointer;width:28px;height:28px;font-size:16px;display:flex;align-items:center;justify-content:center">&#8722;</button><span style="font-size:14px;font-weight:800;color:var(--blue);min-width:24px;text-align:center">'+row.contracts+'</span><button onclick="cspRowInc('+idx+')" style="background:rgba(255,255,255,0.08);border:none;border-radius:4px;color:var(--text);cursor:pointer;width:28px;height:28px;font-size:16px;display:flex;align-items:center;justify-content:center">+</button></div>';
+    html+='<input type="number" value="'+pv+'" placeholder="1.20" step="0.01" oninput="cspRowPrem('+idx+',this.value)" style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    html+='<div>'+ph+'</div><div>'+ch+'</div>';
     html+='<button onclick="cspRowRemove('+idx+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0;opacity:0.5">&#215;</button>';
     html+='</div>';
   });
-
-  // Add row button
   html+='<div style="margin-top:6px"><button onclick="cspAddRow()" style="width:100%;padding:8px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15);border-radius:var(--r);color:var(--text3);cursor:pointer;font-family:DM Mono,monospace" onmouseover="this.style.background='rgba(0,200,150,0.08)';this.style.color='var(--green)'" onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.color='var(--text3)'">+ Add Strike</button></div>';
-
   wrap.innerHTML=html;
   _updateTotalsRow();
   cspCalcAndRender();
+}
+function _updateTotalsRow(){
+  var tot=$d('csp-totals-row');
+  var active=_cspRows.filter(function(r){return r.strike>0;});
+  if(!tot)return;
+  if(active.length<2){tot.style.display='none';return;}
+  var tc=0,tp=0,tca=0;
+  active.forEach(function(r){tc+=r.contracts;tp=r2(tp+r.premium*r.contracts*100);tca=r2(tca+r.strike*r.contracts*100);});
+  var elc=$d('csp-total-contracts'),elp=$d('csp-total-prem'),elca=$d('csp-total-cash');
+  if(elc)elc.textContent=tc+'ct';
+  if(elp)elp.textContent='+$'+tp.toFixed(2);
+  if(elca)elca.textContent='$'+tca.toLocaleString('en-US',{minimumFractionDigits:2});
+  tot.style.display='block';
 }
 
 function _updateTotalsRow(){
@@ -6588,10 +6669,12 @@ function cspUseStrike(strike,mid){
 
 // == SMART BUDGET OPTIMIZER ==
 function optBudgetPresets(){
-  // Sync ticker between optimizer and manual builder
   var optTk=$d('opt-ticker'),cspTk=$d('csp-ticker');
-  if(optTk&&optTk.value&&cspTk&&!cspTk.value) cspTk.value=optTk.value;
+  var tk=(optTk&&optTk.value||'').toUpperCase();
+  if(tk&&cspTk&&!cspTk.value)cspTk.value=tk;
+  if(tk){var hk=Object.keys(HOLDINGS).find(function(k){return(HOLDINGS[k].ticker||k.split('_')[0])===tk;});if(hk){var h=HOLDINGS[hk];var oac=$d('opt-adj-cb');if(oac&&!oac.value){var adj=h.adjCB!=null?h.adjCB:(h.origCB||0);if(adj>0)oac.value=adj;}if(h.currentPrice>0)_cspLivePrice=h.currentPrice;}}
 }
+function optSetBudget(amount){var el=$d('opt-budget');if(el)el.value=String(amount);optBudgetPresets();optRunOptimizer();}
 
 function optFetchAndRun(){
   var tk=($d('opt-ticker').value||'').trim().toUpperCase();
@@ -6639,6 +6722,20 @@ function optFetchAndRun(){
 }
 
 function optRunOptimizer(forcedExpiry){
+  var res=$d('opt-results');if(!res)return;
+  res.style.display='block';
+  res.innerHTML='<div style="padding:10px;color:var(--text3);font-family:DM Mono,monospace;font-size:11px">Calculating...</div>';
+  var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
+  var tk=($d('opt-ticker')&&$d('opt-ticker').value||'').toUpperCase()||_cspTicker||'';
+  var adjCB=parseFloat(($d('opt-adj-cb')&&$d('opt-adj-cb').value)||0)||0;
+  var sharesHeld=parseFloat(($d('opt-shares-held')&&$d('opt-shares-held').value)||0)||0;
+  var goal=($d('opt-goal')&&$d('opt-goal').value)||'lower_cb';
+  var isCall=_cspMode==='call';
+  if(!budget){res.innerHTML='<div style="padding:12px;color:var(--amber);font-family:DM Mono,monospace;font-size:11px">Enter a budget amount, then click Optimize.</div>';return;}
+  try{_optCore(forcedExpiry,res,budget,tk,adjCB,sharesHeld,goal,isCall);}
+  catch(e){res.innerHTML='<div style="padding:14px;background:rgba(255,92,92,0.08);border:1px solid rgba(255,92,92,0.3);border-radius:var(--r);font-family:DM Mono,monospace"><div style="font-size:12px;font-weight:700;color:var(--red)">Error: '+e.message+'</div></div>';console.error('opt:',e);}
+}
+function _optCore(forcedExpiry,res,budget,tk,adjCB,sharesHeld,goal,isCall){
   var budget=parseFloat(($d('opt-budget')&&$d('opt-budget').value)||0)||0;
   var tk=($d('opt-ticker')&&$d('opt-ticker').value||'').toUpperCase()||_cspTicker||'';
   var adjCB=parseFloat(($d('opt-adj-cb')&&$d('opt-adj-cb').value)||0)||0;
@@ -6686,6 +6783,12 @@ function optRunOptimizer(forcedExpiry){
       candidates.push({strike:strike,premium:mid,iv:iv,otmPct:otmPct,maxContracts:maxCt,live:true});
     });
   }
+
+  // Market-closed fallbacks for liveP
+  if(!liveP&&tk&&typeof PRICE_CACHE!=='undefined'&&PRICE_CACHE[tk]>0)liveP=PRICE_CACHE[tk];
+  if(!liveP&&tk){var hk2=Object.keys(HOLDINGS).find(function(k){return(HOLDINGS[k].ticker||k.split('_')[0])===tk;});if(hk2)liveP=HOLDINGS[hk2].currentPrice||0;}
+  if(!liveP&&adjCB>0)liveP=adjCB*1.05;
+  if(!liveP&&tk){var hk3=Object.keys(HOLDINGS).find(function(k){return(HOLDINGS[k].ticker||k.split('_')[0])===tk;});if(hk3){var h3=HOLDINGS[hk3];liveP=h3.currentPrice||h3.adjCB||h3.origCB||0;}}
 
   if(!candidates.length && liveP>0){
     // Estimate from IV if no live chain - generate synthetic strikes
@@ -6930,8 +7033,7 @@ function optRunOptimizer(forcedExpiry){
 
   // Store solutions for "Use" button
   window._optSolutions=top;
-  res.innerHTML=html;
-  res.style.display='block';
+  var rn=$d('opt-results');if(rn){rn.innerHTML=html;rn.style.display='block';}
 }
 
 function optUseSolution(rank){
@@ -6951,7 +7053,7 @@ function optUseSolution(rank){
 // Initialize
 (function(){
   setTimeout(function(){
-    if($d('csp-rows')) cspSetMode('put');
+    if($d('csp-rows')){cspSetMode('put');cspRenderPlans();}
   },600);
 })();
 
