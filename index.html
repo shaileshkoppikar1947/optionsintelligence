@@ -452,38 +452,38 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     </div>
   </div>
 
-  <!-- ══ MANUAL STRIKE BUILDER (top) ══ -->
+  <!-- ══ MANUAL STRIKE BUILDER ══ -->
   <div style="margin-bottom:20px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.07em;font-family:'DM Mono',monospace">&#9998; Manual Strike Builder</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-        <input id="csp-ticker" placeholder="e.g. IONQ" oninput="this.value=this.value.toUpperCase()" style="width:75px;padding:5px 8px;font-size:12px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;outline:none;text-transform:uppercase"/>
-        <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Adj CB:</span>
-        <input id="csp-manual-adjcb" type="number" placeholder="e.g. 38.25" step="0.01" style="width:90px;padding:5px 8px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;outline:none"/>
+        <input id="csp-ticker" placeholder="TICKER" oninput="this.value=this.value.toUpperCase()" style="width:80px;padding:5px 8px;font-size:12px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;outline:none;text-transform:uppercase"/>
+        <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Adj CB</span>
+        <input id="csp-manual-adjcb" type="number" placeholder="38.25" step="0.01" oninput="cspCalcAndRender()" style="width:80px;padding:5px 8px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;outline:none"/>
         <button onclick="cspFetchChain()" id="csp-fetch-btn" class="act-btn blue" style="font-size:11px;padding:5px 12px">&#9889; Live Chain</button>
         <button onclick="cspAddRow()" class="act-btn" style="font-size:11px;padding:5px 12px">+ Strike</button>
-        <button onclick="cspReset()" style="padding:5px 10px;font-size:11px;background:none;border:1px solid var(--border);border-radius:var(--r);color:var(--text3);cursor:pointer;font-family:'DM Mono',monospace">Reset</button>
+        <button onclick="cspReset()" style="padding:5px 10px;font-size:11px;background:none;border:1px solid var(--border);border-radius:var(--r);color:var(--text3);cursor:pointer;font-family:'DM Mono',monospace">Clear</button>
       </div>
     </div>
 
     <!-- Description -->
-    <div id="csp-desc" style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;padding:8px 12px;background:rgba(77,166,255,0.06);border-left:3px solid rgba(77,166,255,0.4);border-radius:0 var(--r) var(--r) 0;margin-bottom:10px;line-height:1.6">
-      <strong style="color:var(--blue)">Cash-Secured Put:</strong> Sell puts and hold cash to buy shares if assigned. Type any strike + premium — works fully offline, no live price needed.
+    <div id="csp-desc" style="font-size:11px;color:var(--text2);font-family:'DM Mono',monospace;padding:7px 12px;background:rgba(77,166,255,0.06);border-left:3px solid rgba(77,166,255,0.4);border-radius:0 var(--r) var(--r) 0;margin-bottom:10px;line-height:1.5">
+      <strong style="color:var(--blue)">Cash-Secured Put:</strong> Sell puts, hold cash to buy shares if assigned. Type strikes and premiums directly &mdash; works offline, no live price needed.
     </div>
 
-    <!-- Chain status -->
-    <div id="csp-chain-status-wrap" style="display:none;margin-bottom:8px">
+    <!-- Chain / expiry controls (hidden until Live Chain clicked) -->
+    <div id="csp-chain-status-wrap" style="display:none;margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <span id="csp-live-price-badge" style="font-size:11px;font-weight:700;color:var(--green);font-family:'DM Mono',monospace;padding:3px 8px;background:rgba(0,200,150,0.1);border-radius:4px;border:1px solid rgba(0,200,150,0.3)"></span>
-      <span id="csp-chain-status" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-left:8px"></span>
-      <span id="csp-chain-click-hint" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-left:8px"></span>
+      <span id="csp-chain-status" style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace"></span>
+      <span id="csp-chain-click-hint" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace"></span>
     </div>
     <div id="csp-expiry-row" style="display:none;margin-bottom:8px">
       <select id="csp-expiry-sel" onchange="cspLoadExpiry()" style="padding:5px 8px;font-size:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:'DM Mono',monospace;outline:none"></select>
     </div>
     <div id="csp-chain-table" style="margin-bottom:10px;max-height:180px;overflow-y:auto"></div>
 
-    <!-- Table header -->
-    <div style="display:grid;grid-template-columns:100px 1fr 110px 90px 1fr 28px;gap:6px;padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:6px">
+    <!-- Column headers -->
+    <div style="display:grid;grid-template-columns:110px 110px 110px 100px 140px 24px;gap:8px;padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:6px">
       <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase">Strike $</div>
       <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;text-align:center">Contracts</div>
       <div style="font-size:10px;font-weight:700;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase">Premium/sh</div>
@@ -492,147 +492,72 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       <div></div>
     </div>
 
-    <!-- Strike rows rendered here -->
-    <div id="csp-rows" style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px"></div>
+    <!-- Strike rows rendered here by cspRender() -->
+    <div id="csp-rows" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
 
-    <!-- Summary cards -->
-    <div id="csp-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:10px"></div>
-  </div>
-
-  <div style="border-top:1px solid var(--border);margin:0 -4px 16px;padding-top:16px"></div>
-
-  <!-- ══ SMART BUDGET OPTIMIZER (below manual) ══ -->
-  <!-- ── Manual Strike Builder (top) ── -->
-  <div class="card" style="margin-top:14px" id="csp-calc-card">
-
-    <!-- Header: mode toggle -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <div class="sl" style="margin-bottom:0">Options Strategy Calculator</div>
-      <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden">
-        <button id="csp-mode-put" onclick="cspSetMode('put')" style="padding:6px 16px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:DM Mono,monospace;background:var(--blue-d);color:var(--blue)">Cash-Secured Put</button>
-        <button id="csp-mode-call" onclick="cspSetMode('call')" style="padding:6px 16px;font-size:12px;font-weight:700;border:none;cursor:pointer;font-family:DM Mono,monospace;background:transparent;color:var(--text3)">Covered Call</button>
-      </div>
-    </div>
-
-    <!-- ── MANUAL STRIKE BUILDER ── -->
-    <div style="margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;font-family:DM Mono,monospace;flex:1">Manual Strike Builder</div>
-        <!-- Ticker -->
-        <input id="csp-ticker" placeholder="TICKER" oninput="this.value=this.value.toUpperCase()" style="width:80px;padding:6px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
-        <!-- Adj CB -->
-        <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Adj CB:</span>
-          <input id="csp-manual-adjcb" type="number" placeholder="e.g. 38.25" step="0.01" style="width:90px;padding:6px 10px;font-size:12px;border:1px solid rgba(0,200,150,0.4);border-radius:var(--r);background:var(--bg3);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="cspCalcAndRender()"/>
-        </div>
-        <!-- Live Chain button -->
-        <button onclick="cspFetchChain()" id="csp-fetch-btn" style="padding:6px 14px;font-size:11px;font-weight:700;background:var(--blue-d);border:1px solid rgba(77,166,255,0.4);border-radius:var(--r);color:var(--blue);cursor:pointer;font-family:DM Mono,monospace;white-space:nowrap">Live Chain</button>
-        <!-- Add / Reset -->
-        <button onclick="cspAddRow()" style="padding:6px 14px;font-size:11px;font-weight:700;background:rgba(0,200,150,0.12);border:1px solid rgba(0,200,150,0.3);border-radius:var(--r);color:var(--green);cursor:pointer;font-family:DM Mono,monospace">+ Strike</button>
-        <button onclick="cspReset()" style="padding:6px 10px;font-size:10px;background:none;border:1px solid var(--border2);border-radius:var(--r);color:var(--text3);cursor:pointer;font-family:DM Mono,monospace">Reset</button>
-        <span id="csp-chain-status" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace"></span>
-      </div>
-
-      <!-- Description box -->
-      <div id="csp-desc" style="font-size:11px;color:var(--text2);font-family:DM Mono,monospace;margin-bottom:10px;padding:8px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);line-height:1.7"></div>
-
-      <!-- Live chain expiry selector -->
-      <div id="csp-expiry-row" style="display:none;margin-bottom:10px;padding:10px 14px;background:var(--bg3);border:1px solid rgba(77,166,255,0.2);border-radius:var(--r)">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="font-size:10px;font-weight:700;color:var(--blue);font-family:DM Mono,monospace;text-transform:uppercase">Expiry:</span>
-          <select id="csp-expiry-sel" onchange="cspLoadExpiry()" style="padding:6px 10px;font-size:12px;border:1px solid rgba(77,166,255,0.3);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;min-width:160px"></select>
-          <span id="csp-live-price-badge" style="font-size:12px;font-weight:700;color:var(--green);font-family:DM Mono,monospace"></span>
-          <span id="csp-chain-click-hint" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Click a row to add that strike</span>
-        </div>
-        <div id="csp-chain-table" style="margin-top:10px;max-height:220px;overflow-y:auto"></div>
-      </div>
-
-      <!-- Column headers -->
-      <div style="display:grid;grid-template-columns:110px 90px 90px 100px 1fr 24px;gap:8px;padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:6px">
-        <div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;text-transform:uppercase;letter-spacing:0.05em">Strike $</div>
-        <div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;text-transform:uppercase;text-align:center">Contracts</div>
-        <div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;text-transform:uppercase;text-align:right">Premium/sh</div>
-        <div style="font-size:10px;color:var(--green);font-family:DM Mono,monospace;text-transform:uppercase;text-align:right">Premium $</div>
-        <div style="font-size:10px;color:var(--amber);font-family:DM Mono,monospace;text-transform:uppercase;text-align:right">Cash Needed</div>
+    <!-- Totals row -->
+    <div id="csp-totals-row" style="display:none;border-top:2px solid rgba(0,200,150,0.3);padding-top:8px;margin-top:4px">
+      <div style="display:grid;grid-template-columns:110px 110px 110px 100px 140px 24px;gap:8px;padding:0 4px">
+        <div style="font-size:12px;font-weight:800;color:var(--text);font-family:'DM Mono',monospace">TOTAL</div>
+        <div id="csp-total-contracts" style="font-size:12px;font-weight:800;color:var(--blue);font-family:'DM Mono',monospace;text-align:center"></div>
+        <div></div>
+        <div id="csp-total-prem" style="font-size:12px;font-weight:800;color:var(--green);font-family:'DM Mono',monospace"></div>
+        <div id="csp-total-cash" style="font-size:12px;font-weight:800;color:var(--amber);font-family:'DM Mono',monospace"></div>
         <div></div>
       </div>
-
-      <!-- Strike rows rendered by cspRender() -->
-      <div id="csp-rows" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px"></div>
-
-      <!-- Summary cards -->
-      <div id="csp-results" style="display:none"></div>
     </div>
 
-    <hr style="border:none;border-top:1px solid var(--border);margin:4px 0 18px"/>
-
-    <!-- ── SMART BUDGET OPTIMIZER ── -->
-    <div style="background:var(--bg3);border:1px solid rgba(0,200,150,0.25);border-radius:var(--r);padding:14px 16px">
-      <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em;font-family:DM Mono,monospace;margin-bottom:10px">Smart Budget Optimizer — Auto-build the best strike combination</div>
-
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-        <div>
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Ticker</div>
-          <input id="opt-ticker" placeholder="e.g. IONQ" oninput="this.value=this.value.toUpperCase();optBudgetPresets()" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-transform:uppercase"/>
-        </div>
-        <div>
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Budget ($)</div>
-          <input id="opt-budget" type="number" placeholder="10000" step="1000" style="width:110px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="optBudgetPresets()"/>
-        </div>
-        <div>
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Adj CB / sh <span style="color:var(--green)">(optional)</span></div>
-          <input id="opt-adj-cb" type="number" placeholder="e.g. 38.25" step="0.01" style="width:110px;padding:7px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="optBudgetPresets()"/>
-        </div>
-        <div id="opt-shares-wrap" style="display:none">
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Shares Held</div>
-          <input id="opt-shares-held" type="number" placeholder="700" step="100" style="width:90px;padding:7px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right" oninput="optBudgetPresets()"/>
-        </div>
-        <div>
-          <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;font-family:DM Mono,monospace;margin-bottom:4px">Goal</div>
-          <select id="opt-goal" onchange="optBudgetPresets()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none">
-            <option value="lower_cb">Lower adj CB most</option>
-            <option value="max_premium">Max premium $</option>
-            <option value="max_contracts">Max contracts</option>
-            <option value="safest">Safest (most OTM)</option>
-          </select>
-        </div>
-        <button onclick="optRunOptimizer()" id="opt-run-btn" style="padding:7px 20px;font-size:13px;font-weight:700;background:var(--green);color:#000;border:none;border-radius:var(--r);cursor:pointer;font-family:Syne,sans-serif;white-space:nowrap">Optimize</button>
-        <button onclick="optFetchAndRun()" id="opt-live-btn" style="padding:7px 16px;font-size:12px;font-weight:700;background:var(--blue-d);border:1px solid rgba(77,166,255,0.4);border-radius:var(--r);color:var(--blue);cursor:pointer;font-family:DM Mono,monospace;white-space:nowrap">Live + Optimize</button>
-      </div>
-
-      <!-- Quick budget presets -->
-      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center">
-        <span style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace">Quick:</span>
-        <button onclick="optSetBudget(5000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$5K</button>
-        <button onclick="optSetBudget(10000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$10K</button>
-        <button onclick="optSetBudget(25000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$25K</button>
-        <button onclick="optSetBudget(50000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$50K</button>
-        <button onclick="optSetBudget(60000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$60K</button>
-        <button onclick="optSetBudget(100000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$100K</button>
-        <span id="opt-status" style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-left:4px"></span>
-      </div>
-
-      <!-- Optimizer results -->
-      <div id="opt-results" style="display:none;margin-top:12px"></div>
-    </div>
+    <!-- Full results panel (summary cards + breakdown table) -->
+    <div id="csp-results" style="display:none;margin-top:12px"></div>
   </div>
 
-  <!-- Premium Scout -->
-  <div class="card" style="margin-top:14px">
-    <div class="sl">🔭 Premium Scout — Wheel Candidates</div>
-    <div style="font-size:12px;color:var(--text2);font-family:DM Mono,monospace;margin-bottom:10px;line-height:1.7">
-      Stocks with strong premium. <span style="color:var(--green);font-weight:700">★ YOU OWN</span> = you can sell more CCs right now. <strong>NEW</strong> = use cash for CSPs (cash-secured puts = you collect premium, and only buy shares if stock drops to your strike).
+  <div style="border-top:1px solid var(--border);margin:0 0 16px;padding-top:0"></div>
+
+  <!-- ══ SMART BUDGET OPTIMIZER ══ -->
+  <div style="background:var(--bg3);border:1px solid rgba(0,200,150,0.2);border-radius:var(--r);padding:14px 16px">
+    <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.08em;font-family:'DM Mono',monospace;margin-bottom:12px">&#9889; Smart Budget Optimizer &mdash; Auto-build the best strike combination</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px">
+      <div>
+        <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:4px">Ticker</div>
+        <input id="opt-ticker" placeholder="IONQ" oninput="this.value=this.value.toUpperCase();optBudgetPresets();" style="width:75px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:'DM Mono',monospace;outline:none;text-transform:uppercase"/>
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:4px">Budget ($)</div>
+        <input id="opt-budget" type="number" placeholder="10000" step="1000" style="width:110px;padding:7px 10px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:'DM Mono',monospace;outline:none;text-align:right" oninput="optBudgetPresets()"/>
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:4px">Adj CB / Sh <span style="color:var(--green);font-size:8px">(optional)</span></div>
+        <input id="opt-adj-cb" type="number" placeholder="38.25" step="0.01" style="width:100px;padding:7px 10px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:'DM Mono',monospace;outline:none"/>
+      </div>
+      <div style="display:none"><input id="opt-shares-held" type="number" value="0"/></div>
+      <div>
+        <div style="font-size:9px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;margin-bottom:4px">Goal</div>
+        <select id="opt-goal" onchange="optBudgetPresets()" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg2);color:var(--text);font-family:'DM Mono',monospace;outline:none">
+          <option value="lower_cb">Lower adj CB most</option>
+          <option value="max_premium">Max premium $</option>
+          <option value="max_contracts">Max contracts</option>
+          <option value="safest">Safest (most OTM)</option>
+        </select>
+      </div>
+      <button onclick="optRunOptimizer()" style="padding:8px 20px;font-size:13px;font-weight:700;background:var(--green);color:#000;border:none;border-radius:var(--r);cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap">&#9658; Optimize</button>
+      <button onclick="optFetchAndRun()" style="padding:8px 16px;font-size:12px;font-weight:700;background:rgba(0,200,150,0.15);color:var(--green);border:1px solid rgba(0,200,150,0.4);border-radius:var(--r);cursor:pointer;font-family:'DM Mono',monospace;white-space:nowrap">&#9889; Live + Optimize</button>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
-      <button class="prem-tk-btn active" id="scout-all-btn" onclick="filterScout('all',this)">All</button>
-      <button class="prem-tk-btn" onclick="filterScout('quantum',this)">⚛ Quantum/AI</button>
-      <button class="prem-tk-btn" onclick="filterScout('tech',this)">💻 Tech</button>
-      <button class="prem-tk-btn" onclick="filterScout('own',this)">★ I Own</button>
-      <button class="prem-tk-btn" onclick="filterScout('under50',this)">Under $50</button>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+      <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">Quick:</span>
+      <button onclick="optSetBudget(5000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$5K</button>
+      <button onclick="optSetBudget(10000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$10K</button>
+      <button onclick="optSetBudget(25000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$25K</button>
+      <button onclick="optSetBudget(50000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$50K</button>
+      <button onclick="optSetBudget(60000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$60K</button>
+      <button onclick="optSetBudget(100000)" class="prem-tk-btn" style="font-size:11px;padding:3px 10px">$100K</button>
+      <span id="opt-status" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-left:4px"></span>
     </div>
-    <div id="scout-result"></div>
-    <div style="margin-top:8px;font-size:10px;color:var(--text3);font-family:DM Mono,monospace">⚠ IV estimates — verify live in Strike Advisor before trading.</div>
+    <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:8px;padding:6px 8px;background:rgba(0,200,150,0.04);border-radius:4px;border:1px solid rgba(0,200,150,0.1)">
+      Market open: use <strong>&#9889; Live + Optimize</strong> for real bid/ask prices &nbsp;|&nbsp; Market closed: enter Ticker + Adj CB, click <strong>Optimize</strong> for estimates
+    </div>
+    <div id="opt-results" style="display:none;margin-top:12px"></div>
   </div>
+
 </div>
 
 <!-- WHEEL CYCLES -->
@@ -6251,19 +6176,29 @@ function cspGetAdjCB(){
 }
 
 function cspReset(){
-  _cspLivePrice=0; _cspTicker='';
+  _cspLivePrice=0; _cspTicker=''; _optLiveChain={};
+  // Clear all visible fields
+  var fields=['csp-ticker','csp-manual-adjcb','csp-adj-cb','csp-shares-held'];
+  fields.forEach(function(id){var el=$d(id);if(el)el.value='';});
+  // Hide chain UI
   var er=$d('csp-expiry-row');if(er)er.style.display='none';
   var csw=$d('csp-chain-status-wrap');if(csw)csw.style.display='none';
+  var ct=$d('csp-chain-table');if(ct)ct.innerHTML='';
   var st=$d('csp-chain-status');if(st)st.textContent='';
-  var tk=$d('csp-ticker');if(tk)tk.value='';
-  var sh=$d('csp-shares-held');if(sh)sh.value='';
-  var ac=$d('csp-adj-cb');if(ac)ac.value='';
-  var mac=$d('csp-manual-adjcb');if(mac)mac.value='';
-  var otk=$d('opt-ticker');if(otk)otk.value='';
-  var ob=$d('opt-budget');if(ob)ob.value='';
-  var oac=$d('opt-adj-cb');if(oac)oac.value='';
+  var cb=$d('csp-live-price-badge');if(cb)cb.textContent='';
+  // Hide results and totals
+  var res=$d('csp-results');if(res){res.style.display='none';res.innerHTML='';}
+  var tot=$d('csp-totals-row');if(tot)tot.style.display='none';
+  // Also clear optimizer fields
+  var optFields=['opt-ticker','opt-budget','opt-adj-cb'];
+  optFields.forEach(function(id){var el=$d(id);if(el)el.value='';});
   var ores=$d('opt-results');if(ores){ores.style.display='none';ores.innerHTML='';}
-  cspSetMode(_cspMode);
+  // Reset rows to 3 blank
+  _cspNextId=1;
+  _cspRows=[{id:_cspNextId++,strike:0,contracts:1,premium:0},
+            {id:_cspNextId++,strike:0,contracts:1,premium:0},
+            {id:_cspNextId++,strike:0,contracts:1,premium:0}];
+  cspRender();
 }
 
 function cspAddRow(){
@@ -6275,42 +6210,98 @@ function cspAddRow(){
 
 // -- Manual row renderer --
 function cspRender(){
-  var wrap=$d('csp-rows');if(!wrap)return;
+  var wrap=$d('csp-rows');
+  if(!wrap)return;
   var isCall=_cspMode==='call';
   var adjCB=cspGetAdjCB();
   var html='';
-  _cspRows.forEach(function(row,rowIdx){
-    var premTot=r2(row.premium*row.contracts*100);
-    var cashNeeded=r2(row.strike*row.contracts*100);
-    var effCB=row.strike>0&&row.premium>0?r2(row.strike-row.premium):null;
-    var adjCBv=adjCB>0?adjCB:0;
-    var aboveCB=adjCBv>0&&row.strike>0?(isCall?row.strike>=adjCBv:row.strike<=adjCBv):null;
-    var premColor=premTot>0?'var(--green)':'var(--text3)';
-    var premStr=premTot>0?('+$'+premTot.toFixed(2)):'--';
-    var cashStr=cashNeeded>0?('$'+cashNeeded.toLocaleString('en-US',{minimumFractionDigits:2})):'--';
-    var cashColor=cashNeeded>0?'var(--amber)':'var(--text3)';
-    var effCBStr=effCB!==null?('eff CB $'+effCB.toFixed(2)+'/sh'):'';
-    var cbColor=aboveCB===null?'var(--text3)':aboveCB?'var(--green)':'var(--red)';
-    html+='<div style="display:grid;grid-template-columns:110px 90px 90px 100px 1fr 24px;gap:8px;align-items:center;padding:6px 4px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border)">';
-    html+='<input type="number" value="'+(row.strike||'')+'" placeholder="strike" step="0.5" oninput="cspUpdateStrike('+rowIdx+',this.value)" style="width:100%;padding:8px 10px;font-size:15px;font-weight:800;border:2px solid '+(row.strike>0?'var(--border2)':'rgba(245,200,66,0.5)')+';border-radius:6px;background:var(--bg2);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:center;box-sizing:border-box"/>';
-    html+='<div style="display:flex;align-items:center;justify-content:center;gap:4px"><button onclick="cspDec('+rowIdx+')" style="width:28px;height:28px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,0.07);color:var(--text);cursor:pointer;font-size:18px;font-weight:700;line-height:1;padding:0">-</button><span style="font-size:15px;font-weight:800;color:var(--blue);min-width:22px;text-align:center">'+row.contracts+'</span><button onclick="cspInc('+rowIdx+')" style="width:28px;height:28px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,0.07);color:var(--text);cursor:pointer;font-size:18px;font-weight:700;line-height:1;padding:0">+</button></div>';
-    html+='<input type="number" value="'+(row.premium||'')+'" placeholder="0.00" step="0.01" oninput="cspUpdatePremium('+rowIdx+',this.value)" style="width:100%;padding:8px 10px;font-size:14px;font-weight:700;border:2px solid '+(row.premium>0?'rgba(0,200,150,0.4)':'var(--border2)')+';border-radius:6px;background:var(--bg2);color:var(--green);font-family:DM Mono,monospace;outline:none;text-align:right;box-sizing:border-box"/>';
-    html+='<div style="text-align:right;font-family:DM Mono,monospace"><div style="font-size:14px;font-weight:800;color:'+premColor+'">'+premStr+'</div></div>';
-    html+='<div style="text-align:right;font-family:DM Mono,monospace"><div style="font-size:14px;font-weight:800;color:'+cashColor+'">'+cashStr+'</div>'+(effCBStr?('<div style="font-size:10px;color:'+cbColor+'">'+effCBStr+'</div>'):'')+'</div>';
-    html+='<button onclick="cspRemove('+rowIdx+')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;opacity:0.5;padding:2px;line-height:1">x</button>';
-    html+='</div>';
+
+  _cspRows.forEach(function(row,idx){
+    var strikeVal = row.strike>0 ? row.strike : '';
+    var premVal   = row.premium>0 ? row.premium : '';
+    var premTot   = row.strike>0 && row.premium>0 ? r2(row.premium*row.contracts*100) : null;
+    var cashTot   = row.strike>0 ? r2(row.strike*row.contracts*100) : null;
+    var effCB     = row.strike>0 && row.premium>0 ? r2(row.strike-row.premium) : null;
+
+    var premHtml = premTot!=null
+      ? '<div style="font-size:13px;font-weight:700;color:var(--green)">+$'+premTot.toFixed(2)+'</div>'
+      : '<div style="color:var(--text3);font-size:12px">-</div>';
+
+    var cashHtml = '';
+    if(cashTot!=null){
+      cashHtml = '<div style="font-size:13px;font-weight:700;color:var(--amber)">$'+cashTot.toLocaleString('en-US',{minimumFractionDigits:2})+'</div>';
+      if(effCB!=null){
+        var aboveCB = adjCB>0 && (isCall ? row.strike>=adjCB : row.strike<=adjCB);
+        cashHtml += '<div style="font-size:10px;color:'+(aboveCB?'var(--green)':'var(--text3)')+'">eff CB $'+effCB.toFixed(2)+'/sh</div>';
+      }
+    } else {
+      cashHtml = '<div style="color:var(--text3);font-size:12px">-</div>';
+    }
+
+    html += '<div style="display:grid;grid-template-columns:110px 110px 110px 100px 140px 24px;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04)">';
+    // Strike input
+    html += '<input type="number" value="'+strikeVal+'" placeholder="'+(isCall?'50':'45')+'" step="0.5"'
+      +' oninput="cspRowStrike('+idx+',this.value)"'
+      +' style="width:100%;padding:6px 8px;font-size:13px;font-weight:700;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    // Contracts +/-
+    html += '<div style="display:flex;align-items:center;justify-content:center;gap:4px">'
+      +'<button onclick="cspRowDec('+idx+')" style="background:rgba(255,255,255,0.08);border:none;border-radius:4px;color:var(--text);cursor:pointer;width:28px;height:28px;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center">&#8722;</button>'
+      +'<span style="font-size:14px;font-weight:800;color:var(--blue);min-width:24px;text-align:center">'+row.contracts+'</span>'
+      +'<button onclick="cspRowInc('+idx+')" style="background:rgba(255,255,255,0.08);border:none;border-radius:4px;color:var(--text);cursor:pointer;width:28px;height:28px;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center">+</button>'
+      +'</div>';
+    // Premium input
+    html += '<input type="number" value="'+premVal+'" placeholder="1.20" step="0.01"'
+      +' oninput="cspRowPrem('+idx+',this.value)"'
+      +' style="width:100%;padding:6px 8px;font-size:13px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:DM Mono,monospace;outline:none;text-align:right"/>';
+    // Premium total
+    html += '<div>'+premHtml+'</div>';
+    // Cash needed
+    html += '<div>'+cashHtml+'</div>';
+    // Remove button
+    html += '<button onclick="cspRowRemove('+idx+')" title="Remove row" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0;opacity:0.5;line-height:1;text-align:center">&#215;</button>';
+    html += '</div>';
   });
-  wrap.innerHTML=html;
+
+  wrap.innerHTML = html;
+  _updateTotalsRow();
   cspCalcAndRender();
 }
 
-// Row action functions - all index-based, no stale IDs
+function _updateTotalsRow(){
+  var totRow = $d('csp-totals-row');
+  var activeRows = _cspRows.filter(function(r){ return r.strike>0; });
+  if(!totRow) return;
+  if(activeRows.length < 2){ totRow.style.display='none'; return; }
+
+  var totalContracts=0, totalPrem=0, totalCash=0;
+  activeRows.forEach(function(r){
+    totalContracts += r.contracts;
+    totalPrem = r2(totalPrem + r.premium*r.contracts*100);
+    totalCash = r2(totalCash + r.strike*r.contracts*100);
+  });
+
+  var tc=$d('csp-total-contracts'), tp=$d('csp-total-prem'), tca=$d('csp-total-cash');
+  if(tc) tc.textContent = totalContracts+'ct';
+  if(tp) tp.textContent = '+$'+totalPrem.toFixed(2);
+  if(tca) tca.textContent = '$'+totalCash.toLocaleString('en-US',{minimumFractionDigits:2});
+  totRow.style.display = 'block';
+}
+
+// Row action functions - index-based, no stale IDs
 function cspRowInc(idx){if(_cspRows[idx]){_cspRows[idx].contracts=Math.max(1,(_cspRows[idx].contracts||1)+1);cspRender();}}
 function cspRowDec(idx){if(_cspRows[idx]){_cspRows[idx].contracts=Math.max(1,(_cspRows[idx].contracts||1)-1);cspRender();}}
-function cspRowStrike(idx,val){if(_cspRows[idx]!==undefined){_cspRows[idx].strike=parseFloat(val)||0;cspCalcAndRender();}}
-function cspRowPrem(idx,val){if(_cspRows[idx]!==undefined){_cspRows[idx].premium=parseFloat(val)||0;cspCalcAndRender();}}
+function cspRowStrike(idx,val){if(_cspRows[idx]!==undefined){_cspRows[idx].strike=parseFloat(val)||0;_updateTotalsRow();cspCalcAndRender();}}
+function cspRowPrem(idx,val){if(_cspRows[idx]!==undefined){_cspRows[idx].premium=parseFloat(val)||0;_updateTotalsRow();cspCalcAndRender();}}
 function cspRowRemove(idx){_cspRows.splice(idx,1);cspRender();}
-// Keep old names as aliases for backwards compat
+// Aliases
+function cspInc(idx){cspRowInc(idx);}
+function cspDec(idx){cspRowDec(idx);}
+function cspUpdateStrike(idx,val){cspRowStrike(idx,val);}
+function cspUpdatePremium(idx,val){cspRowPrem(idx,val);}
+function cspRemove(idx){cspRowRemove(idx);}
+function cspUpdate(idx,field,val){if(_cspRows[idx])_cspRows[idx][field]=parseFloat(val)||0;cspRender();}
+
+
 function cspInc(idx){cspRowInc(idx);}
 function cspDec(idx){cspRowDec(idx);}
 function cspUpdateStrike(idx,val){cspRowStrike(idx,val);}
@@ -6645,9 +6636,23 @@ function cspUseStrike(strike,mid){
 
 // == SMART BUDGET OPTIMIZER ==
 function optBudgetPresets(){
-  // Sync ticker between optimizer and manual builder
+  // Sync ticker from opt to csp
   var optTk=$d('opt-ticker'),cspTk=$d('csp-ticker');
-  if(optTk&&optTk.value&&cspTk&&!cspTk.value) cspTk.value=optTk.value;
+  var tk=(optTk&&optTk.value||'').toUpperCase();
+  if(tk&&cspTk&&!cspTk.value) cspTk.value=tk;
+  // Auto-fill adjCB from holdings ONLY if opt-adj-cb is empty AND user typed a ticker
+  if(tk){
+    var hk=Object.keys(HOLDINGS).find(function(k){return (HOLDINGS[k].ticker||k.split('_')[0])===tk;});
+    if(hk){
+      var h=HOLDINGS[hk];
+      var oac=$d('opt-adj-cb');
+      if(oac&&!oac.value){
+        var adj=h.adjCB!=null?h.adjCB:(h.origCB||0);
+        if(adj>0) oac.value=adj;
+      }
+      if(h.currentPrice&&h.currentPrice>0) _cspLivePrice=h.currentPrice;
+    }
+  }
 }
 function optSetBudget(amount){
   var el=$d('opt-budget');
@@ -7040,8 +7045,6 @@ function optUseSolution(rank){
   setTimeout(function(){
     if($d('csp-rows')){
       cspSetMode('put');
-      // Only clear if not already populated by user
-      // Don't clear opt-budget/opt-ticker/opt-adj-cb - user may have typed values
     }
   },600);
 })();
