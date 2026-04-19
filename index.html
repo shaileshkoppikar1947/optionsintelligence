@@ -461,7 +461,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
         <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">Adj CB</span>
         <input id="csp-manual-adjcb" type="number" placeholder="38.25" step="0.01" oninput="cspCalcAndRender()" style="width:80px;padding:5px 8px;font-size:12px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:'DM Mono',monospace;outline:none"/>
         <button onclick="cspFetchChain()" id="csp-fetch-btn" class="act-btn blue" style="font-size:11px;padding:5px 12px">&#9889; Live Chain</button>
-        <button onclick="cspAddRow()" class="act-btn" style="font-size:11px;padding:5px 12px">+ Strike</button>
+        <button onclick="cspAddRow()" class="act-btn" style="font-size:11px;padding:5px 14px;font-weight:700">+ Strike</button>
         <button onclick="cspReset()" style="padding:5px 10px;font-size:11px;background:none;border:1px solid var(--border);border-radius:var(--r);color:var(--text3);cursor:pointer;font-family:'DM Mono',monospace">Clear</button>
       </div>
     </div>
@@ -6261,6 +6261,14 @@ function cspRender(){
     html += '<button onclick="cspRowRemove('+idx+')" title="Remove row" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0;opacity:0.5;line-height:1;text-align:center">&#215;</button>';
     html += '</div>';
   });
+
+  // Add row button at bottom
+  html += '<div style="margin-top:6px">'
+    +'<button onclick="cspAddRow()" style="width:100%;padding:8px;font-size:12px;font-weight:700;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.15);border-radius:var(--r);color:var(--text3);cursor:pointer;font-family:DM Mono,monospace;text-align:center;transition:all 0.15s" '
+    +'onmouseover="this.style.background='rgba(0,200,150,0.08)';this.style.borderColor='rgba(0,200,150,0.4)';this.style.color='var(--green)'" '
+    +'onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.15)';this.style.color='var(--text3)'">'
+    +'+ Add Strike</button>'
+    +'</div>';
 
   wrap.innerHTML = html;
   _updateTotalsRow();
