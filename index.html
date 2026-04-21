@@ -9934,18 +9934,9 @@ function lockOI(){
 }
 
 window.addEventListener('load', function(){
-  var stored=localStorage.getItem(OI_PW_KEY);
-  if(!stored){
-    _lockMode='setup';
-    document.getElementById('lock-title').textContent='Welcome to Options Intelligence';
-    document.getElementById('lock-sub').textContent='Create a password to protect your tracker. Write it down - no recovery.';
-    document.getElementById('lock-pw').placeholder='Create password (min 4 chars)';
-    document.getElementById('lock-pw2').style.display='block';
-    document.getElementById('lock-action-btn').textContent='Create Password';
-  } else {
-    _lockMode='unlock';
-    document.getElementById('lock-pw').focus();
-  }
+  // Auto-unlock: skip password check, go straight to app
+  // Password can still be set/used via the Lock button if desired
+  showOIApp();
 });
 
 
