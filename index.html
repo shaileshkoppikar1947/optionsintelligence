@@ -1723,26 +1723,20 @@ function importData(evt){
   r.readAsText(f); evt.target.value='';
 }
 function clearAll(){
-  if(confirm('Clear ALL holdings and trades?\n\nThis cannot be undone. Export first if you want a backup.')){
-    // Nuclear clear - wipe ALL localStorage for this page
-    try{ localStorage.clear(); }catch(e){}
+  if(confirm('Clear ALL holdings, trades and accounts?\n\nThis cannot be undone. Export first if you want a backup.\n\nPage will reload after clearing.')){
+    // Truly nuclear - wipe ALL localStorage keys
+    try{
+      var keys=[];
+      for(var i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
+      keys.forEach(function(k){ try{localStorage.removeItem(k);}catch(e){} });
+      localStorage.clear();
+    }catch(e){}
+    // Clear all in-memory globals too
     HOLDINGS={};
+    ACCOUNTS={};
     ACTIVE_ACCOUNT='ALL';
-    window._premYr='ALL'; window._premTk='ALL';
-    window._dashActiveYr=null;
-    window._ibRows=[]; window._ibNextId=1;
-    // Restore default accounts
-    ACCOUNTS={
-      acct_joint_account:{name:'Joint Account'},
-      acct_joint_rental:{name:'Joint Rental'},
-      acct_ira:{name:'IRA'},
-      acct_roth_ira:{name:'Roth IRA'}
-    };
-    autoSave();
-    renderAll();
-    var ind=$d('save-ind');
-    if(ind){ind.textContent='? Cleared - fresh start';ind.style.color='var(--green)';}
-    alert('All data cleared. Now upload your CSVs fresh.');
+    // Reload page fresh - nothing persists in memory
+    setTimeout(function(){ location.reload(true); }, 200);
   }
 }
 function removeDuplicateTrades(){
