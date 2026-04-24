@@ -8232,7 +8232,7 @@ function renderExpiryCalendar(tickers){
             expiry:expiry, daysLeft:daysLeft,
             currentPrice:h.currentPrice||0, sellDate:t.date||''
           });
-          break;
+            // show all open positions per strike
         }
       }
     });
@@ -9897,25 +9897,16 @@ function toggleLockPw(){
   else{inp.type='password';if(eye)eye.textContent='?';}
 }
 
-function lockAction(){
-  var stored=localStorage.getItem(OI_PW_KEY);
-  if(!stored){showOIApp();return;}
-  if(_lockMode==='setup')doSetup();else doUnlock();
-}
+function lockAction(){if(_lockMode==='setup')doSetup();else doUnlock();}
 
 function doUnlock(){
   var pw=document.getElementById('lock-pw').value;
   var stored=localStorage.getItem(OI_PW_KEY);
-  // If no password set, just unlock
   if(!stored){showOIApp();return;}
-  if(!pw){showOIApp();return;}
-  if(hashPw(pw)!==stored){
-    // Wrong password - but also accept blank to bypass
-    document.getElementById('lock-err').textContent='Incorrect password. Leave blank and click Unlock to bypass.';
-    document.getElementById('lock-pw').focus();
-    return;
-  }
-  showOIApp();
+  if(hashPw(pw)===stored){showOIApp();return;}
+  document.getElementById('lock-err').textContent='Incorrect password.';
+  document.getElementById('lock-pw').value='';
+  document.getElementById('lock-pw').focus();
 }
 
 function doSetup(){
@@ -9940,9 +9931,15 @@ function lockOI(){
 }
 
 window.addEventListener('load', function(){
-  // Clear any stored password and go straight to app
-  try{localStorage.removeItem(OI_PW_KEY);}catch(e){}
-  showOIApp();
+  var stored=localStorage.getItem(OI_PW_KEY);
+  if(!stored){
+    // No password set - go straight to app
+    showOIApp();
+  } else {
+    // Password is set - show lock screen
+    _lockMode='unlock';
+    document.getElementById('lock-pw').focus();
+  }
 });
 
 
