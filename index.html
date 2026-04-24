@@ -10030,7 +10030,7 @@ function mscCalc(){
       var el = document.getElementById('msc-cb-improvement');
       if(el){
         el.textContent = (improvement>0?'-':'+')+'$'+Math.abs(improvement).toFixed(2)+'/sh';
-        el.style.color = improvement>0?"var(--green)":"var(--red)";
+        el.style.color = improvement>0?'var(--green)':\'var(--red)\';
       }
     }
   }
