@@ -8243,7 +8243,7 @@ function renderExpiryCalendar(tickers){
   // Dedup: one entry per ticker+account+type (CALL and PUT can coexist)
   var bestByKey={};
   items.forEach(function(item){
-    var key=item.ticker+'|'+(item.acctName||'')+'|'+item.type;
+    var key=item.ticker+'|'+(item.acctName||'')+'|'+item.type+'|'+item.strike;
     if(!bestByKey[key]||item.sellDate>bestByKey[key].sellDate)bestByKey[key]=item;
   });
   items=Object.values(bestByKey);
