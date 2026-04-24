@@ -2486,8 +2486,10 @@ function _renderAllNow(){
               for(var opk=0;opk<opSorted.length;opk++){
                 var opN=opSorted[opk];
                 if(opN.type!==sellType||opN===opT)continue;
+                // Same-strike only: roll to different strike doesn't interrupt close
+                if(opN.strike&&opT.strike&&String(opN.strike)!==String(opT.strike))continue;
                 var opNDate=new Date(opN.date+'T12:00:00');
-                if(opNDate>opDate&&opNDate<=opCDate){newerSell=true;break;}
+                if(opNDate>opDate&&opNDate<opCDate){newerSell=true;break;}
               }
               if(!newerSell){isClosed=true;break;}
             }
@@ -8212,8 +8214,10 @@ function renderExpiryCalendar(tickers){
             for(var k=0;k<sortedDesc.length;k++){
               var n=sortedDesc[k];
               if(n.type!==sellType||n===t)continue;
+              // Same-strike only: rolling to different strike doesn't interrupt close
+              if(n.strike&&t.strike&&String(n.strike)!==String(t.strike))continue;
               var nDate=new Date(n.date+'T12:00:00');
-              if(nDate>tDate&&nDate<=cDate){newerSell=true;break;}
+              if(nDate>tDate&&nDate<cDate){newerSell=true;break;}
             }
             if(!newerSell){closed=true;break;}
           }
