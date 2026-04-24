@@ -1455,7 +1455,7 @@ function exportWeekSnapshot(){
     var opTrades=h.trades||[];
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
-    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
+    ['sold_put','sold_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
@@ -1723,20 +1723,26 @@ function importData(evt){
   r.readAsText(f); evt.target.value='';
 }
 function clearAll(){
-  if(confirm('Clear ALL holdings, trades and accounts?\n\nThis cannot be undone. Export first if you want a backup.\n\nPage will reload after clearing.')){
-    // Truly nuclear - wipe ALL localStorage keys
-    try{
-      var keys=[];
-      for(var i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
-      keys.forEach(function(k){ try{localStorage.removeItem(k);}catch(e){} });
-      localStorage.clear();
-    }catch(e){}
-    // Clear all in-memory globals too
+  if(confirm('Clear ALL holdings and trades?\n\nThis cannot be undone. Export first if you want a backup.')){
+    // Nuclear clear - wipe ALL localStorage for this page
+    try{ localStorage.clear(); }catch(e){}
     HOLDINGS={};
-    ACCOUNTS={};
     ACTIVE_ACCOUNT='ALL';
-    // Reload page fresh - nothing persists in memory
-    setTimeout(function(){ location.reload(true); }, 200);
+    window._premYr='ALL'; window._premTk='ALL';
+    window._dashActiveYr=null;
+    window._ibRows=[]; window._ibNextId=1;
+    // Restore default accounts
+    ACCOUNTS={
+      acct_joint_account:{name:'Joint Account'},
+      acct_joint_rental:{name:'Joint Rental'},
+      acct_ira:{name:'IRA'},
+      acct_roth_ira:{name:'Roth IRA'}
+    };
+    autoSave();
+    renderAll();
+    var ind=$d('save-ind');
+    if(ind){ind.textContent='? Cleared - fresh start';ind.style.color='var(--green)';}
+    alert('All data cleared. Now upload your CSVs fresh.');
   }
 }
 function removeDuplicateTrades(){
@@ -2484,7 +2490,7 @@ function _renderAllNow(){
       var opTrades=h.trades||[];
       var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
       var opCutoff=new Date(now.getTime()-60*86400000);
-      ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
+      ['sold_put','sold_call'].forEach(function(sellType){
         for(var opi=0;opi<opSorted.length;opi++){
           var opT=opSorted[opi];
           if(opT.type!==sellType)continue;
@@ -8210,7 +8216,7 @@ function renderExpiryCalendar(tickers){
     var cutoff=new Date(now.getTime()-60*86400000);
     var acctName=h.account&&ACCOUNTS[h.account]?ACCOUNTS[h.account].name:'';
 
-    ['sold_call','sold_put','bought_put','bought_call'].forEach(function(sellType){
+    ['sold_call','sold_put'].forEach(function(sellType){
       for(var i=0;i<sortedDesc.length;i++){
         var t=sortedDesc[i];
         if(t.type!==sellType)continue;
@@ -8224,7 +8230,7 @@ function renderExpiryCalendar(tickers){
           var c=sortedDesc[j];
           var cDate=new Date(c.date+'T12:00:00');
           if(cDate<=tDate)continue;
-          if(c.type==='bought_close'||c.type==='sold_close'||c.type==='expired'){
+          if(c.type==='bought_close'||c.type==='expired'){
             if(c.strike&&t.strike&&String(c.strike)!==String(t.strike))continue;
             var newerSell=false;
             for(var k=0;k<sortedDesc.length;k++){
@@ -8247,7 +8253,7 @@ function renderExpiryCalendar(tickers){
           var daysLeft=expiry?Math.round((expiry-now)/86400000):null;
           items.push({
             tk:tk, ticker:h.ticker||tk.split('_')[0], acctName:acctName,
-            type:sellType==='sold_call'?'CALL':sellType==='bought_put'?'LONG PUT':sellType==='bought_call'?'LONG CALL':'PUT',
+            type:sellType==='sold_call'?'CALL':'PUT',
             strike:t.strike, contracts:t.contracts||1,
             expiry:expiry, daysLeft:daysLeft,
             currentPrice:h.currentPrice||0, sellDate:t.date||''
@@ -8438,7 +8444,7 @@ function debugOpenPositions(){
     var h=HOLDINGS[tk]; if(!h||h.type!=='wheel')return;
     var trades=h.trades||[];
     var sortedDesc=trades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
-    ['sold_call','sold_put','bought_put','bought_call'].forEach(function(sellType){
+    ['sold_call','sold_put'].forEach(function(sellType){
       for(var i=0;i<sortedDesc.length;i++){
         var t=sortedDesc[i];
         if(t.type!==sellType)continue;
@@ -8449,7 +8455,7 @@ function debugOpenPositions(){
         for(var j=0;j<sortedDesc.length;j++){
           var c=sortedDesc[j];
           if(new Date(c.date+'T12:00:00')<=tDate)continue;
-          if(c.type==='bought_close'||c.type==='sold_close'||c.type==='expired'){
+          if(c.type==='bought_close'||c.type==='expired'){
             if(c.strike&&t.strike&&String(c.strike)!==String(t.strike))continue;
             closed=true;
             results.push(tk+' '+sellType+' $'+t.strike+' '+t.date+' ? CLOSED by '+c.type+' $'+c.strike+' '+c.date);
@@ -8511,7 +8517,7 @@ function renderDashboard(){
     var opTrades=h.trades||[];
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
-    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
+    ['sold_put','sold_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
@@ -8827,7 +8833,7 @@ function renderDashboard(){
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
     var openPos=[];
-    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
+    ['sold_put','sold_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
