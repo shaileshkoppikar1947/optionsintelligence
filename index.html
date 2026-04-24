@@ -1455,7 +1455,7 @@ function exportWeekSnapshot(){
     var opTrades=h.trades||[];
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
-    ['sold_put','sold_call'].forEach(function(sellType){
+    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
@@ -2490,7 +2490,7 @@ function _renderAllNow(){
       var opTrades=h.trades||[];
       var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
       var opCutoff=new Date(now.getTime()-60*86400000);
-      ['sold_put','sold_call'].forEach(function(sellType){
+      ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
         for(var opi=0;opi<opSorted.length;opi++){
           var opT=opSorted[opi];
           if(opT.type!==sellType)continue;
@@ -8216,7 +8216,7 @@ function renderExpiryCalendar(tickers){
     var cutoff=new Date(now.getTime()-60*86400000);
     var acctName=h.account&&ACCOUNTS[h.account]?ACCOUNTS[h.account].name:'';
 
-    ['sold_call','sold_put'].forEach(function(sellType){
+    ['sold_call','sold_put','bought_put','bought_call'].forEach(function(sellType){
       for(var i=0;i<sortedDesc.length;i++){
         var t=sortedDesc[i];
         if(t.type!==sellType)continue;
@@ -8230,7 +8230,7 @@ function renderExpiryCalendar(tickers){
           var c=sortedDesc[j];
           var cDate=new Date(c.date+'T12:00:00');
           if(cDate<=tDate)continue;
-          if(c.type==='bought_close'||c.type==='expired'){
+          if(c.type==='bought_close'||c.type==='sold_close'||c.type==='expired'){
             if(c.strike&&t.strike&&String(c.strike)!==String(t.strike))continue;
             var newerSell=false;
             for(var k=0;k<sortedDesc.length;k++){
@@ -8253,7 +8253,7 @@ function renderExpiryCalendar(tickers){
           var daysLeft=expiry?Math.round((expiry-now)/86400000):null;
           items.push({
             tk:tk, ticker:h.ticker||tk.split('_')[0], acctName:acctName,
-            type:sellType==='sold_call'?'CALL':'PUT',
+            type:sellType==='sold_call'?'CALL':sellType==='bought_put'?'LONG PUT':sellType==='bought_call'?'LONG CALL':'PUT',
             strike:t.strike, contracts:t.contracts||1,
             expiry:expiry, daysLeft:daysLeft,
             currentPrice:h.currentPrice||0, sellDate:t.date||''
@@ -8444,7 +8444,7 @@ function debugOpenPositions(){
     var h=HOLDINGS[tk]; if(!h||h.type!=='wheel')return;
     var trades=h.trades||[];
     var sortedDesc=trades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
-    ['sold_call','sold_put'].forEach(function(sellType){
+    ['sold_call','sold_put','bought_put','bought_call'].forEach(function(sellType){
       for(var i=0;i<sortedDesc.length;i++){
         var t=sortedDesc[i];
         if(t.type!==sellType)continue;
@@ -8455,7 +8455,7 @@ function debugOpenPositions(){
         for(var j=0;j<sortedDesc.length;j++){
           var c=sortedDesc[j];
           if(new Date(c.date+'T12:00:00')<=tDate)continue;
-          if(c.type==='bought_close'||c.type==='expired'){
+          if(c.type==='bought_close'||c.type==='sold_close'||c.type==='expired'){
             if(c.strike&&t.strike&&String(c.strike)!==String(t.strike))continue;
             closed=true;
             results.push(tk+' '+sellType+' $'+t.strike+' '+t.date+' ? CLOSED by '+c.type+' $'+c.strike+' '+c.date);
@@ -8517,7 +8517,7 @@ function renderDashboard(){
     var opTrades=h.trades||[];
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
-    ['sold_put','sold_call'].forEach(function(sellType){
+    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
@@ -8833,7 +8833,7 @@ function renderDashboard(){
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
     var openPos=[];
-    ['sold_put','sold_call'].forEach(function(sellType){
+    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
