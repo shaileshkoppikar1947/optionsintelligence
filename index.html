@@ -1668,21 +1668,40 @@ function importData(evt){
     try{
       var d=JSON.parse(e.target.result);
       if(!d.HOLDINGS){alert('Invalid file - no HOLDINGS data found.');return;}
-      // Wipe everything first
-      try{
-        var keys=[];
-        for(var i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
-        keys.forEach(function(k){if(k&&k.indexOf('wheel_tracker')===0) localStorage.removeItem(k);});
-      }catch(e2){}
-      HOLDINGS={}; ACCOUNTS={};
-      window._premYr='ALL'; window._premTk='ALL'; ACTIVE_ACCOUNT='ALL';
-      // Load fresh data
-      HOLDINGS=d.HOLDINGS;
-      if(d.ACCOUNTS) ACCOUNTS=d.ACCOUNTS;
-      // Ensure all holdings have ticker field and normalize account tags
-      Object.keys(HOLDINGS).forEach(function(k){
-        if(!HOLDINGS[k].ticker) HOLDINGS[k].ticker=k.split('_')[0];
-        if(HOLDINGS[k].account==='default') HOLDINGS[k].account='';
+      // MERGE mode: add/update without wiping existing data
+      var isFullExport = Object.keys(d.HOLDINGS).length > 5; // heuristic: full export has many holdings
+      var tradeKey=function(t){return (t.date||'')+'|'+(t.type||'')+'|'+(t.strike||0)+'|'+(t.contracts||0);};
+
+      // Merge accounts
+      if(d.ACCOUNTS){
+        Object.keys(d.ACCOUNTS).forEach(function(ak){
+          if(!ACCOUNTS[ak]) ACCOUNTS[ak]=d.ACCOUNTS[ak];
+        });
+      }
+
+      // Merge holdings
+      Object.keys(d.HOLDINGS).forEach(function(hk){
+        var incoming=d.HOLDINGS[hk];
+        if(!incoming.ticker) incoming.ticker=hk.split('_')[0];
+        if(incoming.account==='default') incoming.account='';
+
+        if(!HOLDINGS[hk]){
+          // New holding - add it
+          HOLDINGS[hk]=incoming;
+        } else {
+          // Existing holding - merge trades only, keep existing metadata
+          var existingKeys={};
+          (HOLDINGS[hk].trades||[]).forEach(function(t){existingKeys[tradeKey(t)]=true;});
+          (incoming.trades||[]).forEach(function(t){
+            if(!existingKeys[tradeKey(t)]){
+              HOLDINGS[hk].trades=HOLDINGS[hk].trades||[];
+              HOLDINGS[hk].trades.push(t);
+            }
+          });
+          // Update price/adjCB if incoming has newer values
+          if(incoming.currentPrice>0) HOLDINGS[hk].currentPrice=incoming.currentPrice;
+          if(incoming.adjCB>0 && !HOLDINGS[hk].adjCB) HOLDINGS[hk].adjCB=incoming.adjCB;
+        }
       });
       repairZeroAmountTrades();
       save();
@@ -1695,7 +1714,7 @@ function importData(evt){
       var hCount=Object.keys(HOLDINGS).length;
       var tCount=Object.values(HOLDINGS).reduce(function(s,h){return s+(h.trades||[]).length;},0);
       var wheelCount=Object.values(HOLDINGS).filter(function(h){return h.type==='wheel';}).length;
-      alert('[OK] Import complete\n\n'+hCount+' holdings ('+wheelCount+' wheel) . '+Object.keys(ACCOUNTS).length+' accounts . '+tCount+' trades\n\nData loaded cleanly.');
+      alert('[OK] Import merged\n\n'+hCount+' holdings ('+wheelCount+' wheel) . '+Object.keys(ACCOUNTS).length+' accounts . '+tCount+' trades\n\nNew data merged with existing. No existing data was removed.');
     }catch(err){alert('Import failed - '+err.message);}
   };
   r.readAsText(f); evt.target.value='';
