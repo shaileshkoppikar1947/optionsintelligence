@@ -1928,10 +1928,21 @@ function _renderAllNow(){
   var globalBar=$d('global-account-bar');
   if(globalBar)globalBar.innerHTML=acctBarHtml;
 
-  // Filter tickers by active account
+  // Filter tickers by active account (exclude archived with no open positions)
   var tickers=allTickers.filter(function(t){
+    var h=HOLDINGS[t];
+    // Hide archived holdings unless they still have an open (unexpired) position
+    if(h&&h.archived){
+      var nowD=new Date(); nowD.setHours(0,0,0,0);
+      var hasOpen=(h.trades||[]).some(function(tr){
+        if(tr.type!=='sold_put'&&tr.type!=='sold_call') return false;
+        if(!tr.expiry) return false;
+        return new Date(tr.expiry+'T12:00:00')>=nowD;
+      });
+      if(!hasOpen) return false;
+    }
     if(ACTIVE_ACCOUNT==='ALL')return true;
-    var acct=HOLDINGS[t].account||'';
+    var acct=h.account||'';
     return acct===ACTIVE_ACCOUNT||!acct;
   });
 
