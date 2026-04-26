@@ -299,6 +299,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 
 <!-- ALL HOLDINGS -->
 <div class="tab" id="tab-holdings">
+  <div id="archived-badge" onclick="showArchivedPanel()" style="display:none;cursor:pointer;margin-bottom:10px;padding:7px 16px;background:rgba(255,200,0,0.07);border:1px solid rgba(255,200,0,0.25);border-radius:8px;color:var(--amber);font-size:12px;font-family:'DM Mono',monospace"></div>
   <div id="expiry-calendar-wrap" style="margin-bottom:14px"></div>
   <div class="card" style="margin-bottom:14px;padding:0;overflow:hidden" id="trade-log-card">
     <div style="padding:12px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleTradeLogPanel()">
@@ -2652,6 +2653,8 @@ function _renderAllNow(){
   if($d('tab-dashboard')&&$d('tab-dashboard').classList.contains('active')){
     renderDashboard();
   }
+  // Always refresh archived badge
+  renderArchivedBadge();
 }
 
 // Premium panel filter
@@ -2686,7 +2689,28 @@ function toggleTrades(ticker){
 }
 function setPrice(t,v){if(HOLDINGS[t])HOLDINGS[t].currentPrice=parseFloat(v)||0;autoSave();renderAll();}
 function setCB(t,v){var cb=parseFloat(v)||0;if(cb>0&&HOLDINGS[t]){HOLDINGS[t].origCB=cb;HOLDINGS[t].adjCB=cb;autoSave();renderAll();}}
-function delHolding(t){if(confirm('Remove '+t+' and all its trades?')){delete HOLDINGS[t];autoSave();renderAll();}}
+function delHolding(t){
+  var hld=HOLDINGS[t]; if(!hld)return;
+  var trades=hld.trades||[];
+  var premIn=0,premOut=0;
+  trades.forEach(function(tr){
+    var val=tr.amount>0?tr.amount:((tr.premium||0)*(tr.contracts||1)*100);
+    if(tr.type==='sold_call'||tr.type==='sold_put'||tr.type==='sold_close')premIn+=val;
+    else if(tr.type==='bought_close')premOut+=val;
+  });
+  var net=Math.round(premIn-premOut);
+  var hasHistory=net!==0||trades.length>0;
+  if(hasHistory){
+    var choice=confirm('Archive '+t+'?\n\nOK = Archive (keeps $'+net.toLocaleString()+' premium history on dashboard)\nCancel = Do nothing\n\nTo permanently delete, use "Fix Wrong Account" tab.');
+    if(!choice)return;
+    HOLDINGS[t].archived=true;
+    HOLDINGS[t].shares=0;
+  } else {
+    if(!confirm('Remove '+t+' (no premium history)?'))return;
+    delete HOLDINGS[t];
+  }
+  autoSave();renderAll();renderArchivedBadge();
+}
 function delTrade(ticker,idx){
   if(!HOLDINGS[ticker])return;
   var t=HOLDINGS[ticker].trades[idx];if(!t)return;
