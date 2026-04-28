@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Options Intelligence v20260420-1826 -->
+<!-- Options Intelligence v20260428-positions-fix -->
 
 <html lang="en">
 <head>
@@ -207,7 +207,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div class="lock-title" id="lock-title">Options Intelligence</div>
     <div class="lock-sub" id="lock-sub">Enter your password to access your tracker.</div>
     <div style="font-size:11px;color:#555c66;font-family:'DM Mono',monospace;margin:-14px 0 18px;text-align:center;line-height:1.8">
-      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_fixed2.html</span><br/>
+      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_v21.html</span><br/>
       <span id="lock-url-display" style="font-size:10px;opacity:0.5;word-break:break-all"></span>
       <script>
         (function(){
@@ -878,14 +878,14 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 <!-- UPLOAD -->
 <div class="tab" id="tab-upload">
   <div class="card">
-    <div class="sl">Upload Fidelity Activity &amp; Orders CSV</div>
+    <div class="sl">Upload Fidelity CSV Files</div>
     <div class="hint">
-      <strong>Two ways to sync — use both for complete data:</strong><br><br>
-      <strong>1. Positions CSV</strong> → Fidelity.com → Accounts → Positions → <code>Download</code> (top right)<br>
-      ✅ Sets shares + cost basis for all holdings<br><br>
-      <strong>2. Activity &amp; Orders CSV</strong> → Accounts → Activity &amp; Orders → <code>Download</code><br>
-      ✅ Imports all options trades (sold calls/puts, expirations, buybacks)<br><br>
-      Upload multiple date ranges — duplicates are automatically skipped.
+      <strong>Correct upload order — Activity first, then Positions:</strong><br><br>
+      <strong>Step 1 — Activity &amp; Orders CSV</strong> → Fidelity → Accounts → Activity &amp; Orders → <code>Download</code><br>
+      ✅ Builds premium totals, trade history, adj cost basis &nbsp;·&nbsp; File: <code>History_for_Account_*.csv</code><br><br>
+      <strong>Step 2 — Positions CSV</strong> (optional, run after Activity) → Accounts → Positions → <code>Download</code><br>
+      ✅ Updates shares, current price &amp; original CB only — <strong style="color:var(--green)">never reduces totals or touches trade history</strong> &nbsp;·&nbsp; File: <code>Portfolio_Positions_*.csv</code><br><br>
+      ⚡ To start fresh: use <strong>Clear All</strong> (top right), then upload year-to-date Activity CSV. Duplicates always skipped.
     </div>
 
     <!-- Account selector — must create one before uploading -->
@@ -913,20 +913,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div>
-        <div class="sl" style="margin-bottom:6px">Step 1 — Sync positions (shares + CB)</div>
-        <div class="dz" id="dz-pos" onclick="checkAccountThenUpload('f-pos')"
-          ondragover="event.preventDefault();this.style.borderColor='var(--green)'"
-          ondragleave="this.style.borderColor=''"
-          ondrop="onDropPos(event)">
-          <div style="font-size:22px;margin-bottom:6px">📊</div>
-          <div style="font-size:12px;color:var(--text2);font-weight:600">Positions CSV</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:DM Mono,monospace">Portfolio_Positions_*.csv</div>
-        </div>
-        <input type="file" id="f-pos" accept=".csv,.txt" style="display:none" onchange="onPickPos(event)"/>
-        <div id="pos-st" class="status"></div>
-      </div>
-      <div>
-        <div class="sl" style="margin-bottom:6px">Step 2 — Import options trades</div>
+        <div class="sl" style="margin-bottom:6px">Step 1 — Import options trades (Activity)</div>
         <div class="dz" id="dz" onclick="checkAccountThenUpload('f-fid')"
           ondragover="event.preventDefault();this.style.borderColor='var(--green)'"
           ondragleave="this.style.borderColor=''"
@@ -934,9 +921,24 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
           <div style="font-size:22px;margin-bottom:6px">📋</div>
           <div style="font-size:12px;color:var(--text2);font-weight:600">Activity &amp; Orders CSV</div>
           <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:DM Mono,monospace">History_for_Account_*.csv</div>
+          <div style="font-size:10px;color:var(--green);margin-top:5px;font-family:DM Mono,monospace">Builds premium totals &amp; trade history</div>
         </div>
         <input type="file" id="f-fid" accept=".csv,.txt" style="display:none" onchange="onPickFid(event)"/>
         <div id="fid-st" class="status"></div>
+      </div>
+      <div>
+        <div class="sl" style="margin-bottom:6px">Step 2 — Sync holdings snapshot (Positions)</div>
+        <div class="dz" id="dz-pos" onclick="checkAccountThenUpload('f-pos')"
+          ondragover="event.preventDefault();this.style.borderColor='var(--green)'"
+          ondragleave="this.style.borderColor=''"
+          ondrop="onDropPos(event)">
+          <div style="font-size:22px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;color:var(--text2);font-weight:600">Positions CSV</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:DM Mono,monospace">Portfolio_Positions_*.csv</div>
+          <div style="font-size:10px;color:var(--amber);margin-top:5px;font-family:DM Mono,monospace">Updates shares &amp; price only — totals safe</div>
+        </div>
+        <input type="file" id="f-pos" accept=".csv,.txt" style="display:none" onchange="onPickPos(event)"/>
+        <div id="pos-st" class="status"></div>
       </div>
     </div>
 
@@ -1856,18 +1858,20 @@ function calcHolding(ticker){
   // DO NOT estimate shares from contracts for options-only positions -
   // it produces wrong numbers. Only use recorded shares.
   var adjCB, cbRed, cbPct, isFullyRecovered;
-  if(totalShares>0 && origCB>0){
-    // Full position - calculate adj CB properly
-    adjCB = r2(origCB - net/totalShares);
+  // Use origCB from holding if shares were zeroed by positions CSV but we still have history
+  var effectiveShares = totalShares > 0 ? totalShares : (origCB > 0 && net > 0 ? 100 : 0);
+  if(effectiveShares > 0 && origCB > 0){
+    // Calculate adj CB using actual shares if available, else assume 100 (1 contract baseline)
+    var sharesForCalc = totalShares > 0 ? totalShares : effectiveShares;
+    adjCB = r2(origCB - net/sharesForCalc);
     cbRed = r2(origCB - adjCB);
     cbPct = Math.min(Math.round(cbRed/origCB*100), 100);
     isFullyRecovered = adjCB <= 0;
-  } else if(totalShares>0 && origCB===0){
+  } else if(totalShares > 0 && origCB === 0){
     // Have shares but no cost basis set yet
     adjCB = 0; cbRed = 0; cbPct = 0; isFullyRecovered = false;
   } else {
-    // Options-only (CSPs, no shares assigned, or no CB data)
-    // Show net premium but no adj CB calculation
+    // Options-only (CSPs, no shares assigned, no CB data)
     adjCB = null; cbRed = 0; cbPct = 0; isFullyRecovered = false;
   }
 
@@ -1931,14 +1935,19 @@ function _renderAllNow(){
   // Filter tickers by active account (exclude archived with no live positions)
   var tickers=allTickers.filter(function(t){
     var h=HOLDINGS[t];
-    if(h&&h.archived){
-      var nowD=new Date(); nowD.setHours(0,0,0,0);
-      var hasOpen=(h.trades||[]).some(function(tr){
-        if(tr.type!=='sold_put'&&tr.type!=='sold_call') return false;
-        if(!tr.expiry) return false;
-        return new Date(tr.expiry+'T12:00:00')>=nowD;
-      });
-      if(!hasOpen) return false;
+    if(!h) return false;
+    var nowD=new Date(); nowD.setHours(0,0,0,0);
+    var hasOpenPosition=(h.trades||[]).some(function(tr){
+      if(tr.type!=='sold_put'&&tr.type!=='sold_call') return false;
+      if(!tr.expiry) return false;
+      return new Date(tr.expiry+'T12:00:00')>=nowD;
+    });
+    // Hide archived holdings with no open positions
+    if(h.archived && !hasOpenPosition) return false;
+    // Hide zeroed-out holdings (shares=0 from positions CSV) with no open positions
+    // These are stocks you no longer hold — keep premium history but hide from table
+    if(h.shares===0 && !hasOpenPosition && h.type==='wheel' && (h.trades||[]).length>0){
+      return false;
     }
     if(ACTIVE_ACCOUNT==='ALL') return true;
     var acct=(h&&h.account)||'';
@@ -1968,6 +1977,17 @@ function _renderAllNow(){
   }
 
   // -- Portfolio summary numbers --
+  // IMPORTANT: Use ALL tickers for this account for financial totals (including hidden/zeroed ones)
+  // so that deleting shares from Positions CSV never reduces premium totals.
+  // `tickers` is only used for the visible table rows below.
+  var summaryTickers=allTickers.filter(function(t){
+    var h=HOLDINGS[t];
+    if(!h) return false;
+    if(ACTIVE_ACCOUNT==='ALL') return true;
+    var acct=(h&&h.account)||'';
+    return acct===ACTIVE_ACCOUNT||!acct;
+  });
+
   var totCostOrig=0,totVal=0,totPremIn=0,totPremOut=0,totDivs=0,wheelCount=0;
   var totMonthly=0,totWeekly=0,tot30d=0;
   // Master data structure: byYear[yr][ticker] = {in, out, divs, trades[]}
@@ -1975,7 +1995,7 @@ function _renderAllNow(){
   var byYear={};
   var byYearMonth={}; // {2026: {1:{in,out,net}, 2:{...}, ...}, 2025:{...}}
   var wheelTickers=[];
-  tickers.forEach(function(t){
+  summaryTickers.forEach(function(t){
     var h=calcHolding(t);if(!h)return;
     if(h.origCB>0)totCostOrig+=h.totalShares*h.origCB;
     totVal+=h.totalShares*(h.currentPrice||0);
@@ -3249,58 +3269,89 @@ function smartParseFid(text,filename){
 
 function applyPositions(positions,filename){
   var acctId=($d('up-account')&&$d('up-account').value)||'';
-  var added=0,updated=0;
+  var added=0,updated=0,removed=0;
   var preview=[];
+
+  // Build set of tickers present in this Positions CSV
+  var csvTickers={};
+  positions.forEach(function(p){ if(p.ticker) csvTickers[p.ticker]=true; });
+
+  // STEP 1: Zero out shares for holdings in this account NOT in the Positions CSV
+  // Only zero holdings that are strictly tagged to this account.
+  // Trade history is always preserved.
+  if(acctId){
+    Object.keys(HOLDINGS).forEach(function(k){
+      var h=HOLDINGS[k];
+      // STRICT: only touch holdings explicitly tagged to this account
+      if(h.account!==acctId) return;
+      var tk=h.ticker||k.split('_')[0];
+      if(csvTickers[tk]) return; // still in positions — keep shares
+      if(h.shares>0){
+        h.shares=0;
+        removed++;
+        preview.push('\u2715 '+tk+': shares zeroed (not in positions)');
+      }
+    });
+  }
+
+  // STEP 2: Update or create holdings from the Positions CSV
   positions.forEach(function(p){
     if(!p.ticker)return;
 
-    // Find the best matching key for this ticker in the selected account
-    // Priority: 1) exact match with same account, 2) scoped key with same account, 3) plain key
+    // STRICT account matching: only touch holdings that belong to THIS account
+    // Never bleed shares from one account into another account's holding
     var key=null;
-
-    // Search all holdings for matching ticker + account
-    var matchingKeys=Object.keys(HOLDINGS).filter(function(k){
-      var h=HOLDINGS[k];
-      return (h.ticker||k.split('_')[0])===p.ticker && (!acctId||h.account===acctId);
-    });
-
-    if(matchingKeys.length>0){
-      // Use the one with most trades (most data)
-      matchingKeys.sort(function(a,b){
-        return (HOLDINGS[b].trades||[]).length-(HOLDINGS[a].trades||[]).length;
+    if(acctId){
+      // Look for exact ticker+account match only
+      var exactKeys=Object.keys(HOLDINGS).filter(function(k){
+        var h=HOLDINGS[k];
+        return (h.ticker||k.split('_')[0])===p.ticker && h.account===acctId;
       });
-      key=matchingKeys[0];
-    } else {
-      // No match for this account - create new entry
-      // Use scoped key if plain key exists for another account
-      if(HOLDINGS[p.ticker]&&HOLDINGS[p.ticker].account!==acctId){
-        key=p.ticker+'_'+(acctId?acctId.replace('acct_',''):Date.now());
+      if(exactKeys.length>0){
+        exactKeys.sort(function(a,b){return (HOLDINGS[b].trades||[]).length-(HOLDINGS[a].trades||[]).length;});
+        key=exactKeys[0];
       } else {
-        key=p.ticker;
+        // No holding for this ticker in this account yet - create scoped key
+        // Use plain key only if it's completely unclaimed (no account set)
+        var plainKey=p.ticker;
+        if(HOLDINGS[plainKey] && !HOLDINGS[plainKey].account){
+          // Unclaimed plain key - assign to this account
+          key=plainKey;
+        } else {
+          // Already claimed by another account - create scoped key
+          key=p.ticker+'_'+acctId;
+        }
       }
+    } else {
+      key=HOLDINGS[p.ticker]?p.ticker:(p.ticker);
     }
 
     var existing=HOLDINGS[key];
     if(existing){
-      if(p.shares)existing.shares=p.shares;
-      if(p.currentPrice)existing.currentPrice=p.currentPrice;
-      // Always update origCB from positions file - it is the authoritative source
+      // Positions CSV only owns: shares, currentPrice, origCB — never trades
+      if(p.shares!=null) existing.shares=p.shares;
+      if(p.currentPrice>0) existing.currentPrice=p.currentPrice;
       if(p.origCB>0) existing.origCB=p.origCB;
-      if(!existing.name&&p.name)existing.name=p.name;
-      if(acctId)existing.account=acctId;
+      if(!existing.name&&p.name) existing.name=p.name;
+      if(acctId) existing.account=acctId;
       updated++;
-      preview.push('? '+p.ticker+': '+p.shares+'sh @ $'+p.origCB);
+      preview.push('\u21bb '+p.ticker+': '+p.shares+'sh @ $'+p.origCB);
     } else {
       HOLDINGS[key]={name:p.name||p.ticker,ticker:p.ticker,shares:p.shares||0,
         origCB:p.origCB||0,currentPrice:p.currentPrice||0,
         type:p.type||'stock',trades:[],account:acctId||''};
       added++;
-      preview.push('+ '+p.ticker+': '+p.shares+'sh . $'+p.origCB+'/sh');
+      preview.push('+ '+p.ticker+': '+p.shares+'sh @ $'+p.origCB+'/sh');
     }
   });
+
   autoSave();renderAll();
-  var msg='[OK] '+added+' added . '+updated+' updated'+(preview.length?' . '+preview.slice(0,6).join(', '):'');
-  setSt('pos-st',msg,'sok');
+  var parts=['[OK] Positions synced'];
+  if(added) parts.push(added+' added');
+  if(updated) parts.push(updated+' updated');
+  if(removed) parts.push(removed+' zeroed (sold/removed)');
+  parts.push('Trade history untouched');
+  setSt('pos-st',parts.join(' · ')+(preview.length?'\n'+preview.slice(0,10).join('\n'):''),'sok');
 }
 
 function onPickPos(e){var f=e.target.files[0];if(f)readPos(f);e.target.value='';}
@@ -4442,369 +4493,6 @@ function backfillExpiriesFromNotes(){
   if(fixed>0){autoSave();console.log('Backfilled expiry on '+fixed+' trades');}
 }
 backfillExpiriesFromNotes();
-// === YTD CSV RECOVERY ===
-(function(){
-  var tk="AAL",an="Roth IRA",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 1, "strike": 11.0, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-26", "type": "sold_call", "amount": 3.78, "contracts": 1, "strike": 11.0, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-02-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 15.5, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 1, "strike": 15.5, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-26", "type": "sold_call", "amount": 15.33, "contracts": 1, "strike": 15.5, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 16.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-20", "type": "sold_call", "amount": 18.33, "contracts": 1, "strike": 15.5, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 1, "strike": 16.0, "expiry": "2026-01-09", "cp": "call"}, {"date": "2026-01-12", "type": "sold_call", "amount": 27.33, "contracts": 1, "strike": 16.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-05", "type": "sold_call", "amount": 22.33, "contracts": 1, "strike": 16.0, "expiry": "2026-01-09", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="IONQ",an="IRA",arch=false;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 5, "strike": 42.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 15, "strike": 44.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 10, "strike": 44.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-23", "type": "sold_put", "amount": 316.64, "contracts": 5, "strike": 42.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 35, "strike": 31.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 15, "strike": 39.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-20", "type": "sold_put", "amount": 1113.24, "contracts": 10, "strike": 44.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-20", "type": "sold_put", "amount": 2014.86, "contracts": 15, "strike": 44.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-15", "type": "bought_close", "amount": 20.23, "contracts": 10, "strike": 27.5, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-15", "type": "sold_put", "amount": 574.89, "contracts": 15, "strike": 39.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 35, "strike": 30.0, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 5, "strike": 28.0, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-04-13", "type": "sold_put", "amount": 333.27, "contracts": 10, "strike": 27.5, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-13", "type": "sold_call", "amount": 2076.4, "contracts": 35, "strike": 31.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-06", "type": "expired", "amount": 0, "contracts": 35, "strike": 29.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-04-06", "type": "sold_call", "amount": 2811.39, "contracts": 35, "strike": 30.0, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-01", "type": "sold_call", "amount": 1621.45, "contracts": 35, "strike": 29.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 35, "strike": 31.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-27", "type": "sold_put", "amount": 200.33, "contracts": 1, "strike": 28.0, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-03-27", "type": "sold_put", "amount": 203.33, "contracts": 1, "strike": 28.0, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-03-27", "type": "sold_put", "amount": 609.98, "contracts": 3, "strike": 28.0, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-03-27", "type": "bought_close", "amount": 350.02, "contracts": 3, "strike": 29.0, "expiry": "2026-03-27", "cp": "put"}, {"date": "2026-03-27", "type": "bought_close", "amount": 106.67, "contracts": 1, "strike": 29.0, "expiry": "2026-03-27", "cp": "put"}, {"date": "2026-03-27", "type": "bought_close", "amount": 112.67, "contracts": 1, "strike": 29.0, "expiry": "2026-03-27", "cp": "put"}, {"date": "2026-03-26", "type": "sold_call", "amount": 702.56, "contracts": 17, "strike": 31.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-26", "type": "sold_call", "amount": 743.89, "contracts": 18, "strike": 31.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-26", "type": "sold_put", "amount": 106.64, "contracts": 5, "strike": 29.0, "expiry": "2026-03-27", "cp": "put"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 35, "strike": 35.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 2006.45, "contracts": 35, "strike": 35.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 35, "strike": 38.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 1831.45, "contracts": 35, "strike": 38.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 35, "strike": 39.5, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-03", "type": "sold_call", "amount": 2181.45, "contracts": 35, "strike": 39.5, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-02", "type": "expired", "amount": 0, "contracts": 35, "strike": 43.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-26", "type": "sold_call", "amount": 956.42, "contracts": 35, "strike": 43.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 35, "strike": 36.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-13", "type": "expired", "amount": 0, "contracts": 1, "strike": 45.5, "expiry": "2026-02-13", "cp": "put"}, {"date": "2026-02-13", "type": "sold_call", "amount": 2006.42, "contracts": 35, "strike": 36.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-13", "type": "bought_close", "amount": 1645.83, "contracts": 35, "strike": 33.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-13", "type": "sold_call", "amount": 571.42, "contracts": 35, "strike": 33.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-12", "type": "expired", "amount": 0, "contracts": 14, "strike": 45.5, "expiry": "2026-02-13", "cp": "put"}, {"date": "2026-02-06", "type": "expired", "amount": 0, "contracts": 5, "strike": 42.0, "expiry": "2026-02-06", "cp": "put"}, {"date": "2026-02-06", "type": "bought_close", "amount": 390.36, "contracts": 15, "strike": 34.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 829.89, "contracts": 15, "strike": 34.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-01-30", "type": "sold_put", "amount": 10789.89, "contracts": 15, "strike": 45.5, "expiry": "2026-02-13", "cp": "put"}, {"date": "2026-01-30", "type": "bought_close", "amount": 9790.11, "contracts": 15, "strike": 45.5, "expiry": "2026-01-30", "cp": "put"}, {"date": "2026-01-30", "type": "sold_put", "amount": 1621.63, "contracts": 5, "strike": 42.0, "expiry": "2026-02-06", "cp": "put"}, {"date": "2026-01-30", "type": "bought_close", "amount": 1088.37, "contracts": 5, "strike": 42.0, "expiry": "2026-01-30", "cp": "put"}, {"date": "2026-01-29", "type": "sold_put", "amount": 266.63, "contracts": 5, "strike": 42.0, "expiry": "2026-01-30", "cp": "put"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 15, "strike": 46.0, "expiry": "2026-01-23", "cp": "put"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 15, "strike": 52.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-26", "type": "sold_put", "amount": 2014.89, "contracts": 15, "strike": 45.5, "expiry": "2026-01-30", "cp": "put"}, {"date": "2026-01-22", "type": "sold_put", "amount": 619.89, "contracts": 15, "strike": 46.0, "expiry": "2026-01-23", "cp": "put"}, {"date": "2026-01-20", "type": "expired", "amount": 0, "contracts": 10, "strike": 47.5, "expiry": "2026-01-16", "cp": "put"}, {"date": "2026-01-16", "type": "bought_close", "amount": 30.36, "contracts": 15, "strike": 52.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-16", "type": "sold_call", "amount": 2539.89, "contracts": 15, "strike": 52.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-15", "type": "sold_put", "amount": 503.26, "contracts": 10, "strike": 47.5, "expiry": "2026-01-16", "cp": "put"}, {"date": "2026-01-09", "type": "sold_call", "amount": 3154.89, "contracts": 15, "strike": 52.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-09", "type": "bought_close", "amount": 150.36, "contracts": 15, "strike": 52.0, "expiry": "2026-01-09", "cp": "call"}, {"date": "2026-01-06", "type": "sold_call", "amount": 1804.89, "contracts": 15, "strike": 52.0, "expiry": "2026-01-09", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="IONQ",an="Joint Account",arch=false;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 1, "strike": 42.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 3, "strike": 44.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 2, "strike": 44.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-23", "type": "sold_put", "amount": 51.33, "contracts": 1, "strike": 42.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 7, "strike": 30.5, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 40.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-20", "type": "sold_put", "amount": 216.65, "contracts": 2, "strike": 44.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-20", "type": "sold_put", "amount": 423.98, "contracts": 3, "strike": 44.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-15", "type": "sold_put", "amount": 59.33, "contracts": 1, "strike": 40.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 7, "strike": 30.0, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-13", "type": "sold_call", "amount": 527.27, "contracts": 7, "strike": 30.5, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-06", "type": "expired", "amount": 0, "contracts": 7, "strike": 29.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-04-06", "type": "sold_call", "amount": 569.27, "contracts": 7, "strike": 30.0, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-01", "type": "sold_call", "amount": 366.29, "contracts": 7, "strike": 29.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 7, "strike": 34.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-25", "type": "sold_call", "amount": 534.29, "contracts": 7, "strike": 34.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 7, "strike": 35.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 394.29, "contracts": 7, "strike": 35.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 7, "strike": 37.5, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 457.29, "contracts": 7, "strike": 37.5, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 7, "strike": 39.5, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-03", "type": "sold_call", "amount": 485.29, "contracts": 7, "strike": 39.5, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-02", "type": "expired", "amount": 0, "contracts": 7, "strike": 43.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-26", "type": "sold_call", "amount": 219.28, "contracts": 7, "strike": 43.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 7, "strike": 35.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-18", "type": "sold_call", "amount": 366.28, "contracts": 7, "strike": 35.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 2, "strike": 36.5, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 5, "strike": 36.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-11", "type": "sold_call", "amount": 84.65, "contracts": 2, "strike": 36.5, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-11", "type": "sold_call", "amount": 63.33, "contracts": 1, "strike": 36.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-11", "type": "sold_call", "amount": 257.3, "contracts": 4, "strike": 36.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-09", "type": "expired", "amount": 0, "contracts": 2, "strike": 42.0, "expiry": "2026-02-06", "cp": "put"}, {"date": "2026-02-06", "type": "bought_close", "amount": 135.12, "contracts": 5, "strike": 34.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 296.63, "contracts": 5, "strike": 34.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-01-30", "type": "sold_put", "amount": 616.65, "contracts": 2, "strike": 42.0, "expiry": "2026-02-06", "cp": "put"}, {"date": "2026-01-30", "type": "bought_close", "amount": 395.35, "contracts": 2, "strike": 42.0, "expiry": "2026-01-30", "cp": "put"}, {"date": "2026-01-29", "type": "sold_put", "amount": 104.65, "contracts": 2, "strike": 42.0, "expiry": "2026-01-30", "cp": "put"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 2, "strike": 47.5, "expiry": "2026-01-23", "cp": "put"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 5, "strike": 51.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 47.5, "expiry": "2026-01-16", "cp": "put"}, {"date": "2026-01-20", "type": "sold_put", "amount": 130.65, "contracts": 2, "strike": 47.5, "expiry": "2026-01-23", "cp": "put"}, {"date": "2026-01-16", "type": "bought_close", "amount": 115.12, "contracts": 5, "strike": 51.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-16", "type": "sold_call", "amount": 1126.63, "contracts": 5, "strike": 51.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-15", "type": "sold_put", "amount": 57.33, "contracts": 1, "strike": 47.5, "expiry": "2026-01-16", "cp": "put"}, {"date": "2026-01-09", "type": "sold_call", "amount": 1281.63, "contracts": 5, "strike": 51.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-09", "type": "bought_close", "amount": 240.12, "contracts": 5, "strike": 51.0, "expiry": "2026-01-09", "cp": "call"}, {"date": "2026-01-06", "type": "sold_call", "amount": 816.63, "contracts": 5, "strike": 51.0, "expiry": "2026-01-09", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="IONQ",an="Joint Rental",arch=false;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 1, "strike": 44.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-24", "type": "bought_close", "amount": 186.07, "contracts": 3, "strike": 42.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-24", "type": "sold_put", "amount": 81.98, "contracts": 3, "strike": 42.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-24", "type": "sold_close", "amount": 48.98, "contracts": 3, "strike": 41.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-24", "type": "sold_close", "amount": 45.33, "contracts": 1, "strike": 42.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 30.5, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-20", "type": "sold_put", "amount": 144.33, "contracts": 1, "strike": 44.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 1, "strike": 30.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-13", "type": "sold_call", "amount": 75.33, "contracts": 1, "strike": 30.5, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-06", "type": "expired", "amount": 0, "contracts": 1, "strike": 29.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-04-06", "type": "sold_call", "amount": 70.33, "contracts": 1, "strike": 30.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-01", "type": "sold_call", "amount": 44.33, "contracts": 1, "strike": 29.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 1, "strike": 34.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-25", "type": "sold_call", "amount": 70.33, "contracts": 1, "strike": 34.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 35.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 55.33, "contracts": 1, "strike": 35.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 1, "strike": 37.5, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 64.33, "contracts": 1, "strike": 37.5, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 1, "strike": 39.5, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-03", "type": "sold_call", "amount": 56.33, "contracts": 1, "strike": 39.5, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 43.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-26", "type": "sold_call", "amount": 33.33, "contracts": 1, "strike": 43.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 35.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-18", "type": "sold_call", "amount": 53.33, "contracts": 1, "strike": 35.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 1, "strike": 36.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-11", "type": "sold_call", "amount": 67.33, "contracts": 1, "strike": 36.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "bought_close", "amount": 26.02, "contracts": 1, "strike": 34.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 60.33, "contracts": 1, "strike": 34.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 50.0, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 1, "strike": 49.5, "expiry": "2026-01-23", "cp": "put"}, {"date": "2026-01-26", "type": "sold_call", "amount": 234.33, "contracts": 1, "strike": 50.0, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-20", "type": "sold_put", "amount": 133.33, "contracts": 1, "strike": 49.5, "expiry": "2026-01-23", "cp": "put"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="IONQ",an="Roth IRA",arch=false;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 3, "strike": 42.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 7, "strike": 44.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 5, "strike": 44.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-24", "type": "bought_close", "amount": 418.36, "contracts": 5, "strike": 42.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-24", "type": "sold_put", "amount": 161.64, "contracts": 5, "strike": 42.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-24", "type": "sold_close", "amount": 86.64, "contracts": 5, "strike": 41.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-23", "type": "sold_put", "amount": 192.98, "contracts": 3, "strike": 42.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 14, "strike": 31.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 6, "strike": 40.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-20", "type": "sold_put", "amount": 526.62, "contracts": 5, "strike": 44.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-20", "type": "sold_put", "amount": 947.27, "contracts": 7, "strike": 44.0, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-15", "type": "sold_put", "amount": 355.96, "contracts": 6, "strike": 40.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 14, "strike": 30.0, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-13", "type": "sold_call", "amount": 830.56, "contracts": 14, "strike": 31.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-06", "type": "expired", "amount": 0, "contracts": 14, "strike": 29.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-04-06", "type": "sold_call", "amount": 1138.55, "contracts": 14, "strike": 30.0, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-01", "type": "sold_call", "amount": 690.58, "contracts": 14, "strike": 29.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 14, "strike": 34.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-25", "type": "sold_call", "amount": 844.58, "contracts": 14, "strike": 34.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 14, "strike": 35.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 816.58, "contracts": 14, "strike": 35.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 14, "strike": 38.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 732.58, "contracts": 14, "strike": 38.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 14, "strike": 39.5, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-03", "type": "sold_call", "amount": 872.58, "contracts": 14, "strike": 39.5, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-02", "type": "expired", "amount": 0, "contracts": 14, "strike": 43.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-26", "type": "sold_call", "amount": 396.57, "contracts": 14, "strike": 43.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 14, "strike": 36.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-13", "type": "sold_call", "amount": 816.57, "contracts": 14, "strike": 36.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-13", "type": "bought_close", "amount": 630.33, "contracts": 14, "strike": 33.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-13", "type": "sold_call", "amount": 242.57, "contracts": 14, "strike": 33.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "expired", "amount": 0, "contracts": 4, "strike": 42.0, "expiry": "2026-02-06", "cp": "put"}, {"date": "2026-02-06", "type": "bought_close", "amount": 250.24, "contracts": 10, "strike": 34.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 533.26, "contracts": 10, "strike": 34.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-01-30", "type": "sold_put", "amount": 1297.3, "contracts": 4, "strike": 42.0, "expiry": "2026-02-06", "cp": "put"}, {"date": "2026-01-30", "type": "bought_close", "amount": 870.7, "contracts": 4, "strike": 42.0, "expiry": "2026-01-30", "cp": "put"}, {"date": "2026-01-29", "type": "sold_put", "amount": 221.3, "contracts": 4, "strike": 42.0, "expiry": "2026-01-30", "cp": "put"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 2, "strike": 46.0, "expiry": "2026-01-23", "cp": "put"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 10, "strike": 52.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-22", "type": "sold_put", "amount": 76.65, "contracts": 2, "strike": 46.0, "expiry": "2026-01-23", "cp": "put"}, {"date": "2026-01-16", "type": "bought_close", "amount": 30.24, "contracts": 10, "strike": 52.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-16", "type": "sold_call", "amount": 1813.26, "contracts": 10, "strike": 52.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-09", "type": "sold_call", "amount": 2083.26, "contracts": 10, "strike": 52.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-09", "type": "bought_close", "amount": 100.24, "contracts": 10, "strike": 52.0, "expiry": "2026-01-09", "cp": "call"}, {"date": "2026-01-06", "type": "sold_call", "amount": 1183.26, "contracts": 10, "strike": 52.0, "expiry": "2026-01-09", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="META",an="Joint Account",arch=false;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-15", "type": "bought_close", "amount": 4204.67, "contracts": 1, "strike": 650.0, "expiry": "2026-05-01", "cp": "call"}, {"date": "2026-04-15", "type": "sold_call", "amount": 3828.25, "contracts": 1, "strike": 740.0, "expiry": "2026-08-21", "cp": "call"}, {"date": "2026-04-10", "type": "bought_close", "amount": 1554.67, "contracts": 1, "strike": 612.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-10", "type": "sold_call", "amount": 1648.29, "contracts": 1, "strike": 650.0, "expiry": "2026-05-01", "cp": "call"}, {"date": "2026-04-08", "type": "bought_close", "amount": 325.67, "contracts": 1, "strike": 605.0, "expiry": "2026-04-08", "cp": "call"}, {"date": "2026-04-08", "type": "sold_call", "amount": 352.33, "contracts": 1, "strike": 612.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-06", "type": "expired", "amount": 0, "contracts": 1, "strike": 610.0, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-04-06", "type": "sold_call", "amount": 51.33, "contracts": 1, "strike": 605.0, "expiry": "2026-04-08", "cp": "call"}, {"date": "2026-04-01", "type": "sold_call", "amount": 37.33, "contracts": 1, "strike": 610.0, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 1, "strike": 575.0, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-26", "type": "sold_call", "amount": 43.33, "contracts": 1, "strike": 575.0, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 665.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 37.33, "contracts": 1, "strike": 665.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 1, "strike": 685.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 67.33, "contracts": 1, "strike": 685.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 1, "strike": 670.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-03", "type": "sold_call", "amount": 135.33, "contracts": 1, "strike": 670.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 670.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-26", "type": "sold_call", "amount": 53.33, "contracts": 1, "strike": 670.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 667.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-18", "type": "sold_call", "amount": 56.33, "contracts": 1, "strike": 667.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 1, "strike": 680.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-12", "type": "sold_call", "amount": 27.33, "contracts": 1, "strike": 680.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-09", "type": "expired", "amount": 0, "contracts": 1, "strike": 692.5, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 28.33, "contracts": 1, "strike": 692.5, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 770.0, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-29", "type": "sold_call", "amount": 26.33, "contracts": 1, "strike": 770.0, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 1, "strike": 670.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-22", "type": "sold_call", "amount": 19.33, "contracts": 1, "strike": 670.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-05", "type": "expired", "amount": 0, "contracts": 1, "strike": 685.0, "expiry": "2026-01-02", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="NVDA",an="IRA",arch=false;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 2, "strike": 182.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-10", "type": "sold_call", "amount": 1640.61, "contracts": 2, "strike": 195.0, "expiry": "2026-05-29", "cp": "call"}, {"date": "2026-04-10", "type": "bought_close", "amount": 1241.35, "contracts": 2, "strike": 182.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-06", "type": "expired", "amount": 0, "contracts": 4, "strike": 177.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-04-06", "type": "sold_call", "amount": 265.31, "contracts": 4, "strike": 182.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-01", "type": "sold_call", "amount": 289.31, "contracts": 4, "strike": 177.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-31", "type": "expired", "amount": 0, "contracts": 4, "strike": 170.0, "expiry": "2026-03-30", "cp": "call"}, {"date": "2026-03-27", "type": "sold_call", "amount": 389.31, "contracts": 4, "strike": 170.0, "expiry": "2026-03-30", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 4, "strike": 190.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-02-27", "type": "bought_close", "amount": 695.02, "contracts": 3, "strike": 210.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-02-27", "type": "bought_close", "amount": 232.67, "contracts": 1, "strike": 210.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-02-27", "type": "sold_call", "amount": 381.33, "contracts": 1, "strike": 190.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-02-27", "type": "sold_call", "amount": 1131.98, "contracts": 3, "strike": 190.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-02-25", "type": "bought_close", "amount": 3410.7, "contracts": 4, "strike": 192.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-25", "type": "sold_call", "amount": 3285.3, "contracts": 4, "strike": 210.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-02-18", "type": "sold_call", "amount": 2113.3, "contracts": 4, "strike": 192.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-18", "type": "bought_close", "amount": 1502.7, "contracts": 4, "strike": 187.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 4, "strike": 185.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-17", "type": "sold_call", "amount": 513.3, "contracts": 4, "strike": 187.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-06", "type": "sold_call", "amount": 1333.3, "contracts": 4, "strike": 185.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "bought_close", "amount": 1190.7, "contracts": 4, "strike": 180.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 141.3, "contracts": 4, "strike": 180.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-02", "type": "expired", "amount": 0, "contracts": 4, "strike": 195.0, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-23", "type": "bought_close", "amount": 232.1, "contracts": 4, "strike": 187.5, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-23", "type": "sold_call", "amount": 465.3, "contracts": 4, "strike": 195.0, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-22", "type": "sold_call", "amount": 177.3, "contracts": 4, "strike": 187.5, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 4, "strike": 197.5, "expiry": "2026-01-09", "cp": "call"}, {"date": "2026-01-07", "type": "sold_call", "amount": 129.3, "contracts": 4, "strike": 197.5, "expiry": "2026-01-09", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="PLTR",an="IRA",arch=false;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 1, "strike": 152.5, "expiry": "2026-04-24", "cp": "call"}, {"date": "2026-04-21", "type": "sold_call", "amount": 116.33, "contracts": 1, "strike": 152.5, "expiry": "2026-04-24", "cp": "call"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 149.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-15", "type": "sold_call", "amount": 42.33, "contracts": 1, "strike": 149.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 1, "strike": 155.0, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-27", "type": "bought_close", "amount": 4388.36, "contracts": 5, "strike": 170.0, "expiry": "2026-07-17", "cp": "call"}, {"date": "2026-03-27", "type": "sold_call", "amount": 4896.64, "contracts": 5, "strike": 160.0, "expiry": "2026-06-18", "cp": "call"}, {"date": "2026-03-26", "type": "sold_call", "amount": 60.33, "contracts": 1, "strike": 155.0, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 157.5, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-04", "type": "sold_call", "amount": 446.33, "contracts": 1, "strike": 157.5, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-04", "type": "bought_close", "amount": 6513.36, "contracts": 5, "strike": 139.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-04", "type": "bought_close", "amount": 402.67, "contracts": 1, "strike": 150.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-04", "type": "sold_call", "amount": 7206.64, "contracts": 5, "strike": 170.0, "expiry": "2026-07-17", "cp": "call"}, {"date": "2026-03-03", "type": "sold_call", "amount": 170.33, "contracts": 1, "strike": 150.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 140.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-25", "type": "sold_call", "amount": 1626.63, "contracts": 5, "strike": 139.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-02-25", "type": "bought_close", "amount": 1328.37, "contracts": 5, "strike": 136.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-25", "type": "sold_call", "amount": 113.33, "contracts": 1, "strike": 140.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "sold_call", "amount": 160.33, "contracts": 1, "strike": 136.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "sold_call", "amount": 621.3, "contracts": 4, "strike": 136.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "bought_close", "amount": 184.1, "contracts": 4, "strike": 142.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "bought_close", "amount": 47.02, "contracts": 1, "strike": 142.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-18", "type": "sold_call", "amount": 1696.63, "contracts": 5, "strike": 142.0, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-18", "type": "bought_close", "amount": 1563.37, "contracts": 5, "strike": 138.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 5, "strike": 140.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-17", "type": "sold_call", "amount": 406.63, "contracts": 5, "strike": 138.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-12", "type": "sold_call", "amount": 28.33, "contracts": 1, "strike": 140.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-12", "type": "sold_call", "amount": 62.65, "contracts": 2, "strike": 140.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-12", "type": "sold_call", "amount": 128.65, "contracts": 2, "strike": 140.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-09", "type": "expired", "amount": 0, "contracts": 2, "strike": 140.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 72.65, "contracts": 2, "strike": 140.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 2, "strike": 170.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-22", "type": "sold_call", "amount": 96.65, "contracts": 2, "strike": 170.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-20", "type": "expired", "amount": 0, "contracts": 2, "strike": 182.5, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-15", "type": "sold_call", "amount": 156.65, "contracts": 2, "strike": 182.5, "expiry": "2026-01-16", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="QBTS",an="IRA",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 15, "strike": 26.5, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-02", "type": "sold_put", "amount": 1774.89, "contracts": 15, "strike": 26.5, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-02", "type": "bought_close", "amount": 360.36, "contracts": 15, "strike": 26.5, "expiry": "2026-01-02", "cp": "put"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="QBTS",an="Joint Account",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 2, "strike": 26.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 1, "strike": 27.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-08", "type": "sold_put", "amount": 11.38, "contracts": 1, "strike": 27.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-05", "type": "expired", "amount": 0, "contracts": 2, "strike": 26.0, "expiry": "2026-01-02", "cp": "put"}, {"date": "2026-01-02", "type": "sold_put", "amount": 208.65, "contracts": 2, "strike": 26.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-02", "type": "bought_close", "amount": 32.05, "contracts": 2, "strike": 26.0, "expiry": "2026-01-02", "cp": "put"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="QBTS",an="Joint Rental",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-01-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 27.0, "expiry": "2026-01-16", "cp": "put"}, {"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 2, "strike": 26.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-09", "type": "bought_close", "amount": 3.02, "contracts": 1, "strike": 27.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-09", "type": "sold_put", "amount": 48.33, "contracts": 1, "strike": 27.0, "expiry": "2026-01-16", "cp": "put"}, {"date": "2026-01-08", "type": "sold_put", "amount": 12.33, "contracts": 1, "strike": 27.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-02", "type": "sold_put", "amount": 206.65, "contracts": 2, "strike": 26.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-02", "type": "bought_close", "amount": 8.05, "contracts": 2, "strike": 25.5, "expiry": "2026-01-02", "cp": "put"}, {"date": "2026-01-02", "type": "sold_put", "amount": 44.65, "contracts": 2, "strike": 25.5, "expiry": "2026-01-02", "cp": "put"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="QBTS",an="Roth IRA",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 5, "strike": 26.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-02", "type": "sold_put", "amount": 194.65, "contracts": 2, "strike": 26.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-02", "type": "sold_put", "amount": 288.98, "contracts": 3, "strike": 26.0, "expiry": "2026-01-09", "cp": "put"}, {"date": "2026-01-02", "type": "bought_close", "amount": 60.12, "contracts": 5, "strike": 26.0, "expiry": "2026-01-02", "cp": "put"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="RGTI",an="IRA",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 6, "strike": 18.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-15", "type": "sold_put", "amount": 139.96, "contracts": 6, "strike": 18.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 5, "strike": 12.5, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 6, "strike": 13.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-02", "type": "sold_put", "amount": 201.64, "contracts": 5, "strike": 12.5, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-04-02", "type": "sold_call", "amount": 487.94, "contracts": 6, "strike": 13.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-02", "type": "bought_close", "amount": 174.14, "contracts": 6, "strike": 13.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 6, "strike": 15.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-30", "type": "sold_call", "amount": 35.33, "contracts": 1, "strike": 13.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "sold_call", "amount": 176.64, "contracts": 5, "strike": 13.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-25", "type": "sold_call", "amount": 193.96, "contracts": 6, "strike": 15.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 6, "strike": 17.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 151.96, "contracts": 6, "strike": 17.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 6, "strike": 19.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 127.96, "contracts": 6, "strike": 19.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 6, "strike": 19.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-02-25", "type": "bought_close", "amount": 412.04, "contracts": 6, "strike": 17.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-25", "type": "sold_call", "amount": 457.96, "contracts": 6, "strike": 19.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-02-24", "type": "sold_call", "amount": 187.96, "contracts": 6, "strike": 17.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 6, "strike": 17.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-18", "type": "sold_call", "amount": 145.96, "contracts": 6, "strike": 17.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 6, "strike": 19.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "sold_call", "amount": 44.33, "contracts": 1, "strike": 19.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "sold_call", "amount": 251.63, "contracts": 5, "strike": 19.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "bought_close", "amount": 210.12, "contracts": 5, "strike": 17.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-06", "type": "bought_close", "amount": 36.02, "contracts": 1, "strike": 17.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 115.96, "contracts": 6, "strike": 17.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 6, "strike": 26.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-22", "type": "sold_call", "amount": 103.96, "contracts": 6, "strike": 26.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-20", "type": "expired", "amount": 0, "contracts": 6, "strike": 28.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-15", "type": "sold_call", "amount": 56.86, "contracts": 6, "strike": 28.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 6, "strike": 29.0, "expiry": "2026-01-09", "cp": "call"}, {"date": "2026-01-07", "type": "sold_call", "amount": 68.26, "contracts": 6, "strike": 29.0, "expiry": "2026-01-09", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="RGTI",an="Joint Account",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 1, "strike": 13.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-02", "type": "sold_call", "amount": 79.33, "contracts": 1, "strike": 13.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-02", "type": "bought_close", "amount": 26.02, "contracts": 1, "strike": 13.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 1, "strike": 15.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-30", "type": "sold_call", "amount": 37.33, "contracts": 1, "strike": 13.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-25", "type": "sold_call", "amount": 29.33, "contracts": 1, "strike": 15.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 17.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 23.33, "contracts": 1, "strike": 17.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 1, "strike": 19.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 21.33, "contracts": 1, "strike": 19.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 1, "strike": 18.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-03", "type": "sold_call", "amount": 51.33, "contracts": 1, "strike": 18.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 19.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-26", "type": "sold_call", "amount": 22.33, "contracts": 1, "strike": 19.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 17.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-18", "type": "sold_call", "amount": 24.33, "contracts": 1, "strike": 17.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 1, "strike": 19.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "sold_call", "amount": 46.33, "contracts": 1, "strike": 19.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "bought_close", "amount": 38.02, "contracts": 1, "strike": 17.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 15.33, "contracts": 1, "strike": 17.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 1, "strike": 26.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-22", "type": "sold_call", "amount": 17.33, "contracts": 1, "strike": 26.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 29.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-15", "type": "sold_call", "amount": 12.33, "contracts": 1, "strike": 29.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 1, "strike": 29.0, "expiry": "2026-01-09", "cp": "call"}, {"date": "2026-01-07", "type": "sold_call", "amount": 10.43, "contracts": 1, "strike": 29.0, "expiry": "2026-01-09", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="RGTI",an="Joint Rental",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 1, "strike": 16.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-23", "type": "sold_put", "amount": 25.33, "contracts": 1, "strike": 16.5, "expiry": "2026-04-24", "cp": "put"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 18.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-15", "type": "sold_put", "amount": 25.33, "contracts": 1, "strike": 18.0, "expiry": "2026-04-17", "cp": "put"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 2, "strike": 12.0, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-04-02", "type": "sold_put", "amount": 58.65, "contracts": 2, "strike": 12.0, "expiry": "2026-04-10", "cp": "put"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="RGTI",an="Roth IRA",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 5, "strike": 12.5, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 6, "strike": 13.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-02", "type": "sold_put", "amount": 196.64, "contracts": 5, "strike": 12.5, "expiry": "2026-04-10", "cp": "put"}, {"date": "2026-04-02", "type": "sold_call", "amount": 475.96, "contracts": 6, "strike": 13.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-02", "type": "bought_close", "amount": 156.14, "contracts": 6, "strike": 13.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 6, "strike": 15.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-30", "type": "sold_call", "amount": 217.96, "contracts": 6, "strike": 13.5, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-25", "type": "sold_call", "amount": 181.96, "contracts": 6, "strike": 15.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 6, "strike": 17.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 145.96, "contracts": 6, "strike": 17.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 6, "strike": 19.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 133.96, "contracts": 6, "strike": 19.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 6, "strike": 19.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-02-25", "type": "bought_close", "amount": 418.04, "contracts": 6, "strike": 17.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-25", "type": "sold_call", "amount": 463.96, "contracts": 6, "strike": 19.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-02-24", "type": "sold_call", "amount": 175.96, "contracts": 6, "strike": 17.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 6, "strike": 17.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-18", "type": "sold_call", "amount": 145.96, "contracts": 6, "strike": 17.0, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 6, "strike": 19.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "sold_call", "amount": 283.96, "contracts": 6, "strike": 19.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "bought_close", "amount": 240.14, "contracts": 6, "strike": 17.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 14.33, "contracts": 1, "strike": 17.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 71.63, "contracts": 5, "strike": 17.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-01-26", "type": "expired", "amount": 0, "contracts": 6, "strike": 26.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-22", "type": "sold_call", "amount": 97.96, "contracts": 6, "strike": 26.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-20", "type": "expired", "amount": 0, "contracts": 6, "strike": 28.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-15", "type": "sold_call", "amount": 56.86, "contracts": 6, "strike": 28.0, "expiry": "2026-01-16", "cp": "call"}, {"date": "2026-01-12", "type": "expired", "amount": 0, "contracts": 6, "strike": 29.0, "expiry": "2026-01-09", "cp": "call"}, {"date": "2026-01-07", "type": "sold_call", "amount": 62.56, "contracts": 6, "strike": 29.0, "expiry": "2026-01-09", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="SOFI",an="IRA",arch=true;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-01-05", "type": "sold_close", "amount": 8941.63, "contracts": 5, "strike": 10.0, "expiry": "2026-01-16", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-(function(){
-  var tk="TSLA",an="IRA",arch=false;
-  var aid='';
-  Object.keys(ACCOUNTS).forEach(function(id){if((ACCOUNTS[id].name||'').toLowerCase()===an.toLowerCase())aid=id;});
-  // Find existing holding key for this ticker+account
-  var hk=null;
-  Object.keys(HOLDINGS).forEach(function(k){
-    var h=HOLDINGS[k];
-    if((h.ticker||k.split('_')[0])===tk&&(h.account||'')===(aid||''))hk=k;
-  });
-  if(!hk){hk=tk+(aid?'_'+aid:'');HOLDINGS[hk]={ticker:tk,type:'wheel',shares:0,account:aid,trades:[]};}
-  var existing=HOLDINGS[hk].trades||[];
-  var newT=[{"date": "2026-04-27", "type": "expired", "amount": 0, "contracts": 1, "strike": 387.5, "expiry": "2026-04-24", "cp": "call"}, {"date": "2026-04-23", "type": "sold_call", "amount": 167.33, "contracts": 1, "strike": 387.5, "expiry": "2026-04-24", "cp": "call"}, {"date": "2026-04-20", "type": "expired", "amount": 0, "contracts": 1, "strike": 410.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-15", "type": "sold_call", "amount": 158.33, "contracts": 1, "strike": 410.0, "expiry": "2026-04-17", "cp": "call"}, {"date": "2026-04-13", "type": "expired", "amount": 0, "contracts": 1, "strike": 357.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-08", "type": "sold_call", "amount": 113.33, "contracts": 1, "strike": 357.5, "expiry": "2026-04-10", "cp": "call"}, {"date": "2026-04-06", "type": "expired", "amount": 0, "contracts": 1, "strike": 385.0, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-04-01", "type": "sold_call", "amount": 202.33, "contracts": 1, "strike": 385.0, "expiry": "2026-04-02", "cp": "call"}, {"date": "2026-03-30", "type": "expired", "amount": 0, "contracts": 1, "strike": 397.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-25", "type": "sold_call", "amount": 115.33, "contracts": 1, "strike": 397.5, "expiry": "2026-03-27", "cp": "call"}, {"date": "2026-03-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 415.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-17", "type": "sold_call", "amount": 89.33, "contracts": 1, "strike": 415.0, "expiry": "2026-03-20", "cp": "call"}, {"date": "2026-03-16", "type": "expired", "amount": 0, "contracts": 1, "strike": 420.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-10", "type": "sold_call", "amount": 126.33, "contracts": 1, "strike": 420.0, "expiry": "2026-03-13", "cp": "call"}, {"date": "2026-03-09", "type": "expired", "amount": 0, "contracts": 1, "strike": 410.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-03", "type": "sold_call", "amount": 125.33, "contracts": 1, "strike": 410.0, "expiry": "2026-03-06", "cp": "call"}, {"date": "2026-03-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 417.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-26", "type": "sold_call", "amount": 115.33, "contracts": 1, "strike": 417.5, "expiry": "2026-02-27", "cp": "call"}, {"date": "2026-02-23", "type": "expired", "amount": 0, "contracts": 1, "strike": 417.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-20", "type": "sold_call", "amount": 68.33, "contracts": 1, "strike": 417.5, "expiry": "2026-02-20", "cp": "call"}, {"date": "2026-02-17", "type": "expired", "amount": 0, "contracts": 1, "strike": 425.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-09", "type": "bought_close", "amount": 525.67, "contracts": 1, "strike": 420.0, "expiry": "2026-02-11", "cp": "call"}, {"date": "2026-02-09", "type": "sold_call", "amount": 549.33, "contracts": 1, "strike": 425.0, "expiry": "2026-02-13", "cp": "call"}, {"date": "2026-02-06", "type": "sold_call", "amount": 457.33, "contracts": 1, "strike": 420.0, "expiry": "2026-02-11", "cp": "call"}, {"date": "2026-02-06", "type": "bought_close", "amount": 365.67, "contracts": 1, "strike": 415.0, "expiry": "2026-02-09", "cp": "call"}, {"date": "2026-02-06", "type": "sold_call", "amount": 379.33, "contracts": 1, "strike": 415.0, "expiry": "2026-02-09", "cp": "call"}, {"date": "2026-02-06", "type": "bought_close", "amount": 335.67, "contracts": 1, "strike": 410.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-05", "type": "sold_call", "amount": 214.33, "contracts": 1, "strike": 410.0, "expiry": "2026-02-06", "cp": "call"}, {"date": "2026-02-02", "type": "expired", "amount": 0, "contracts": 1, "strike": 465.0, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-23", "type": "sold_call", "amount": 779.33, "contracts": 1, "strike": 465.0, "expiry": "2026-01-30", "cp": "call"}, {"date": "2026-01-23", "type": "bought_close", "amount": 142.67, "contracts": 1, "strike": 450.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-23", "type": "sold_call", "amount": 221.33, "contracts": 1, "strike": 450.0, "expiry": "2026-01-23", "cp": "call"}, {"date": "2026-01-23", "type": "bought_close", "amount": 3255.67, "contracts": 1, "strike": 430.0, "expiry": "2026-02-20", "cp": "call"}];
-  newT.forEach(function(nt){
-    var dup=existing.some(function(et){return et.date===nt.date&&et.type===nt.type&&Math.abs((et.amount||0)-(nt.amount||0))<0.50;});
-    if(!dup)existing.push(nt);
-  });
-  HOLDINGS[hk].trades=existing;
-  if(arch)HOLDINGS[hk].archived=true;
-})();
-// === END YTD CSV RECOVERY ===
-
 // Restore last active tab after initial render completes
 (function(){
   var savedTab='dashboard';
@@ -10492,22 +10180,36 @@ if(document.getElementById('msc-body')) mscRender();
 
 
 // ── Archived Holdings Management ─────────────────────────────────────
-function renderArchivedBadge(){
-  var archivedKeys=Object.keys(HOLDINGS).filter(function(k){
-    return HOLDINGS[k].archived;
+function _hiddenKeys(){
+  // Returns keys that are hidden from the table: archived OR zeroed-out (shares=0, no open positions)
+  var nowD=new Date(); nowD.setHours(0,0,0,0);
+  return Object.keys(HOLDINGS).filter(function(k){
+    var h=HOLDINGS[k];
+    if(h.archived) return true;
+    if(h.shares===0 && h.type==='wheel' && (h.trades||[]).length>0){
+      var hasOpen=(h.trades||[]).some(function(tr){
+        if(tr.type!=='sold_put'&&tr.type!=='sold_call') return false;
+        if(!tr.expiry) return false;
+        return new Date(tr.expiry+'T12:00:00')>=nowD;
+      });
+      if(!hasOpen) return true;
+    }
+    return false;
   });
+}
+
+function renderArchivedBadge(){
+  var hiddenKeys=_hiddenKeys();
   var badge=$d('archived-badge');
   if(!badge) return;
-  if(!archivedKeys.length){badge.style.display='none';return;}
+  if(!hiddenKeys.length){badge.style.display='none';return;}
   badge.style.display='inline-flex';
-  badge.textContent='📦 '+archivedKeys.length+' archived holding'+(archivedKeys.length>1?'s':'')+' — click to restore';
+  badge.textContent='📦 '+hiddenKeys.length+' hidden holding'+(hiddenKeys.length>1?'s':'')+' (sold/archived) — click to view';
 }
 
 function showArchivedPanel(){
-  var archivedKeys=Object.keys(HOLDINGS).filter(function(k){
-    return HOLDINGS[k].archived;
-  });
-  if(!archivedKeys.length){alert('No archived holdings.');return;}
+  var archivedKeys=_hiddenKeys();
+  if(!archivedKeys.length){alert('No hidden holdings.');return;}
   var lines=archivedKeys.map(function(k){
     var h=HOLDINGS[k];
     var net=(h.trades||[]).reduce(function(s,t){
