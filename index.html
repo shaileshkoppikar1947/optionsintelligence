@@ -283,6 +283,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
   <button class="nb" onclick="goTab('quality',this)">🎯 Strike Quality</button>
   <button class="nb" onclick="goTab('stockanalysis',this)">🔬 Stock Analysis</button>
   <button class="nb" onclick="goTab('tax',this);renderTaxPlanner()">💸 Tax Planner</button>
+  <button class="nb" onclick="goTab('report',this)">📊 Income Report</button>
   <button class="nb" onclick="goTab('upload',this)">Upload Fidelity</button>
   <button class="nb" onclick="goTab('addstock',this)">Add Stock</button>
   <button class="nb" onclick="goTab('addtrade',this)">Add Trade</button>
@@ -876,6 +877,34 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 </div>
 
 <!-- UPLOAD -->
+<div class="tab" id="tab-report">
+  <div class="card" style="max-width:100%">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="sl" style="margin:0">Income Report</div>
+      <select id="ir-acct" class="sel" style="font-size:12px;padding:4px 8px" onchange="renderIncomeReport()"></select>
+      <select id="ir-yr" class="sel" style="font-size:12px;padding:4px 8px" onchange="renderIncomeReport()"></select>
+      <button class="btn" onclick="renderIncomeReport(true)" style="margin-left:auto;font-size:11px;padding:5px 12px">&#8635; Refresh Summary</button>
+    </div>
+    <div id="ir-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px"></div>
+    <div id="ir-narrative" style="background:var(--bg2);border-radius:var(--r);padding:12px 16px;margin-bottom:14px;font-size:12px;line-height:1.8;color:var(--text2);border-left:2px solid var(--border2);min-height:48px">Click Refresh Summary to generate AI analysis.</div>
+    <div id="ir-months" style="display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:14px"></div>
+    <div id="ir-detail" style="display:none;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:14px">
+      <div style="background:var(--bg2);padding:8px 14px;font-size:11px;font-weight:600;color:var(--text2);display:flex;justify-content:space-between">
+        <span id="ir-dp-title">Month detail</span>
+        <span style="cursor:pointer;color:var(--text3)" onclick="irCloseDetail()">close ×</span>
+      </div>
+      <div id="ir-dp-body"></div>
+    </div>
+    <div style="display:flex;gap:14px;font-size:11px;color:var(--text3);margin-bottom:8px">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#185FA5;margin-right:4px"></span><span id="ir-leg-curr">2026</span></span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(136,135,128,0.4);margin-right:4px"></span><span id="ir-leg-prev">2025</span></span>
+    </div>
+    <div style="position:relative;height:200px">
+      <canvas id="ir-chart" role="img" aria-label="Monthly premium income bar chart"></canvas>
+    </div>
+  </div>
+</div>
+
 <div class="tab" id="tab-upload">
   <div class="card">
     <div class="sl">Upload Fidelity CSV Files</div>
@@ -1252,6 +1281,15 @@ function setActiveAccount(id){
   window._premYr='ALL';
   window._premTk='ALL';
   renderAll();
+  // Sync Income Report dropdown if visible
+  var irAcct=$d('ir-acct');
+  if(irAcct){
+    if(id==='ALL') irAcct.value='ALL';
+    else if(ACCOUNTS[id]) irAcct.value=id;
+  }
+  // If income report tab is open, re-render it
+  var repTab=$d('tab-report');
+  if(repTab&&repTab.classList.contains('active')) renderIncomeReport();
   // If income planner is open, refresh it too
   var incTab=$d('tab-income');
   if(incTab&&incTab.classList.contains('active')){
@@ -1711,6 +1749,9 @@ function importData(evt){
       var acctBar=$d('global-account-bar');
       if(acctBar)acctBar.style.display='flex';
       renderAll();
+      // Refresh income report if it was open
+      var repTab=$d('tab-report');
+      if(repTab&&repTab.classList.contains('active')) setTimeout(renderIncomeReport,100);
       var hCount=Object.keys(HOLDINGS).length;
       var tCount=Object.values(HOLDINGS).reduce(function(s,h){return s+(h.trades||[]).length;},0);
       var wheelCount=Object.values(HOLDINGS).filter(function(h){return h.type==='wheel';}).length;
@@ -4268,6 +4309,7 @@ function goTab(name,btn){
   if(name==='stockanalysis'){populateSaTicker();}
   if(name==='tax'){renderTaxPlanner();}
   if(name==='upload'){renderAcctNumbers();renderDeleteWrongTrades();populateDeleteAcctSel();}
+  if(name==='report'){setTimeout(function(){renderIncomeReport();},50);}
 }
 
 // -- Account Number Auto-detect --
@@ -4499,7 +4541,7 @@ backfillExpiriesFromNotes();
   try{savedTab=localStorage.getItem('oi_active_tab')||'dashboard';}catch(e){}
   var tabEl=$d('tab-'+savedTab);
   if(!tabEl)savedTab='dashboard';
-  var tabMap={dashboard:'Dashboard',news:'News',holdings:'Holdings',advisor:'Strike Advisor',roll:'Roll Advisor',income:'Income Planner',cycles:'Wheel Cycles',sizing:'Position Sizing',benchmark:'Benchmark',quality:'Strike Quality',stockanalysis:'Stock Analysis',tax:'Tax Planner',upload:'Upload Fidelity',addstock:'Add Stock',addtrade:'Add Trade'};
+  var tabMap={dashboard:'Dashboard',news:'News',holdings:'Holdings',advisor:'Strike Advisor',roll:'Roll Advisor',income:'Income Planner',cycles:'Wheel Cycles',sizing:'Position Sizing',benchmark:'Benchmark',quality:'Strike Quality',stockanalysis:'Stock Analysis',tax:'Tax Planner',report:'Income Report',upload:'Upload Fidelity',addstock:'Add Stock',addtrade:'Add Trade'};
   var label=tabMap[savedTab]||'';
   var btns=document.querySelectorAll('.nb');
   var matchBtn=null;
@@ -10232,6 +10274,267 @@ function showArchivedPanel(){
   }
 }
 
+
+// ==============================
+// == INCOME REPORT TAB ==
+// ==============================
+var _irChart=null, _irSelMo=null, _irNarrLoaded=false;
+var _irByYM={}, _irByYMTk={};
+
+function _irBuildData(){
+  _irByYM={}; _irByYMTk={};
+  Object.keys(HOLDINGS).forEach(function(key){
+    var h=HOLDINGS[key];
+    var acct=h.account||'';
+    var tk=h.ticker||key.split('_')[0];
+    (h.trades||[]).forEach(function(tr){
+      if(!tr.date) return;
+      var yr=tr.date.slice(0,4), mo=parseInt(tr.date.slice(5,7))||0;
+      if(!mo) return;
+      if(!_irByYM[yr])_irByYM[yr]={};
+      if(!_irByYM[yr][mo])_irByYM[yr][mo]={};
+      if(!_irByYM[yr][mo][acct])_irByYM[yr][mo][acct]={in:0,out:0};
+      if(!_irByYMTk[yr])_irByYMTk[yr]={};
+      if(!_irByYMTk[yr][mo])_irByYMTk[yr][mo]={};
+      if(!_irByYMTk[yr][mo][tk])_irByYMTk[yr][mo][tk]={acct:acct,in:0,out:0};
+      var val=tr.amount>0?tr.amount:r2((tr.premium||0)*(tr.contracts||1)*100);
+      if(tr.type==='sold_call'||tr.type==='sold_put'){
+        _irByYM[yr][mo][acct].in=r2(_irByYM[yr][mo][acct].in+val);
+        _irByYMTk[yr][mo][tk].in=r2(_irByYMTk[yr][mo][tk].in+val);
+      } else if(tr.type==='bought_close'){
+        _irByYM[yr][mo][acct].out=r2(_irByYM[yr][mo][acct].out+val);
+        _irByYMTk[yr][mo][tk].out=r2(_irByYMTk[yr][mo][tk].out+val);
+      }
+    });
+  });
+}
+
+function _irMoNet(yr,mo,acct){
+  var m=(_irByYM[String(yr)]||{})[mo]||{};
+  if(acct==='ALL'){var i=0,o=0;Object.values(m).forEach(function(a){i+=a.in;o+=a.out;});return r2(i-o);}
+  var a=m[acct]||{in:0,out:0}; return r2(a.in-a.out);
+}
+function _irYTD(yr,upTo,acct){var t=0;for(var m=1;m<=upTo;m++)t+=_irMoNet(yr,m,acct);return r2(t);}
+function _irYearTotal(yr,acct){return _irYTD(yr,12,acct);}
+
+function irInitSelects(){
+  var aEl=$d('ir-acct'), yEl=$d('ir-yr');
+  if(!aEl||!yEl){console.warn('IR: selects not found in DOM');return;}
+
+  var savedAcct=aEl.value||'ALL';
+  var savedYr=yEl.value||String(new Date().getFullYear());
+
+  // Rebuild account options from live ACCOUNTS object
+  var acctKeys=Object.keys(ACCOUNTS).filter(function(k){return ACCOUNTS[k]&&ACCOUNTS[k].name;});
+  var acctHTML='<option value="ALL">All accounts</option>'+
+    acctKeys.map(function(k){return '<option value="'+k+'">'+(ACCOUNTS[k].name||k)+'</option>';}).join('');
+  aEl.innerHTML=acctHTML;
+
+  // Restore or sync to ACTIVE_ACCOUNT
+  var targetAcct=(savedAcct&&(savedAcct==='ALL'||ACCOUNTS[savedAcct]))?savedAcct:
+                 (ACTIVE_ACCOUNT&&(ACTIVE_ACCOUNT==='ALL'||ACCOUNTS[ACTIVE_ACCOUNT]))?ACTIVE_ACCOUNT:'ALL';
+  aEl.value=targetAcct;
+
+  // Rebuild year options from trade data
+  var yrs=Object.keys(_irByYM).map(Number).filter(function(y){return y>=2019;}).sort().reverse();
+  if(!yrs.length){yEl.innerHTML='<option value="'+new Date().getFullYear()+'">'+new Date().getFullYear()+'</option>';return;}
+  yEl.innerHTML=yrs.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join('');
+  var targetYr=(savedYr&&yrs.indexOf(parseInt(savedYr))>=0)?savedYr:String(Math.max.apply(null,yrs));
+  yEl.value=targetYr;
+  console.log('IR selects: acct='+aEl.value+' yr='+yEl.value+' ('+acctKeys.length+' accounts, '+yrs.length+' years)');
+}
+
+var _irMoNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderIncomeReport(forceNarr){
+  if(!Object.keys(HOLDINGS).length){
+    var nEl=$d('ir-narrative');
+    if(nEl){nEl.style.fontStyle='';nEl.style.color='var(--text3)';nEl.textContent='No data loaded yet. Go to Upload Fidelity tab and upload your Activity CSV, or use Import to load a saved JSON.';}
+    return;
+  }
+  _irBuildData();
+  irInitSelects();
+  var acctEl=$d('ir-acct'), yrEl=$d('ir-yr');
+  if(!acctEl||!yrEl) return;
+  var acct=acctEl.value;
+  var selYr=parseInt(yrEl.value)||new Date().getFullYear();
+  var prevYr=selYr-1;
+  var nowY=new Date().getFullYear(), nowM=new Date().getMonth()+1;
+  var isCurr=selYr===nowY;
+  var upTo=isCurr?nowM:12;
+
+  var legC=$d('ir-leg-curr'), legP=$d('ir-leg-prev');
+  if(legC)legC.textContent=selYr; if(legP)legP.textContent=prevYr;
+
+  var ytdC=_irYTD(selYr,upTo,acct), ytdP=_irYTD(prevYr,upTo,acct);
+  var delta=r2(ytdC-ytdP);
+  var pct=ytdP?Math.round(delta/Math.abs(ytdP)*100):null;
+  var avgMo=upTo>0?r2(ytdC/upTo):0;
+  var prevFull=_irYearTotal(prevYr,acct);
+  var bestMo=0,bestV=0;
+  for(var m=1;m<=upTo;m++){var v=_irMoNet(selYr,m,acct);if(v>bestV){bestV=v;bestMo=m;}}
+
+  function fmtIR(n){if(n==null||isNaN(n))return '—';return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fmtS(n){if(!n)return '—';var a=Math.abs(n);return (n<0?'-':'')+'$'+(a>=1000?(a/1000).toFixed(1)+'k':a.toFixed(0));}
+
+  var CS='background:var(--bg2);border-radius:var(--r);padding:12px 14px;';
+  var CL='font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px';
+  var CV='font-size:20px;font-weight:700;color:var(--text);font-family:\'Syne\',sans-serif';
+  var CSB='font-size:11px;color:var(--text3);margin-top:3px';
+  var sumEl=$d('ir-summary');
+  if(sumEl) sumEl.innerHTML=
+    '<div style="'+CS+'"><div style="'+CL+'">'+selYr+' YTD net</div><div style="'+CV+'">'+fmtIR(ytdC)+'</div><div style="'+CSB+'">through '+_irMoNames[upTo-1]+'</div></div>'+
+    '<div style="'+CS+'"><div style="'+CL+'">vs '+prevYr+' same period</div><div style="'+CV+';color:'+(delta>=0?'var(--green)':'var(--red,#e55)')+'">'+( delta>=0?'+':'')+fmtIR(delta)+'</div><div style="'+CSB+'">'+(pct!=null?(pct>=0?'+':'')+pct+'% change':'no prior data')+'</div></div>'+
+    '<div style="'+CS+'"><div style="'+CL+'">monthly avg</div><div style="'+CV+'">'+fmtIR(avgMo)+'</div><div style="'+CSB+'">'+upTo+' months in '+selYr+'</div></div>'+
+    '<div style="'+CS+'"><div style="'+CL+'">best month</div><div style="'+CV+';font-size:16px">'+(bestMo?_irMoNames[bestMo-1]+' '+fmtS(bestV):'—')+'</div><div style="'+CSB+'">'+prevYr+' full yr: '+fmtS(prevFull)+'</div></div>';
+
+  // Month cards
+  var maxV=1;
+  for(var m=1;m<=12;m++){var v=Math.max(_irMoNet(selYr,m,acct),_irMoNet(prevYr,m,acct));if(v>maxV)maxV=v;}
+  var mhtml='';
+  for(var m=1;m<=12;m++){
+    var cv=_irMoNet(selYr,m,acct), pv=_irMoNet(prevYr,m,acct);
+    var dv=r2(cv-pv), fut=isCurr&&m>nowM, isSel=_irSelMo===m;
+    var bar=Math.min(100,Math.round(cv/maxV*100));
+    var barClr=cv<pv&&cv>0?'#e55':'#185FA5';
+    mhtml+='<div style="background:var(--bg);border:1px solid '+(isSel?'#185FA5':'var(--border2)')+';border-width:'+(isSel?'2px':'1px')+';border-radius:var(--r);padding:9px 9px 7px;cursor:pointer;opacity:'+(fut?'0.35':'1')+';pointer-events:'+(fut?'none':'auto')+'" onclick="irToggleDetail('+m+')">'
+      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">'+_irMoNames[m-1]+'</div>'
+      +'<div style="font-size:14px;font-weight:600;color:var(--text)">'+( cv>0?fmtS(cv):'—')+'</div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:1px">'+(pv>0?prevYr+': '+fmtS(pv):'')+'</div>'
+      +(cv>0&&pv>0?'<div style="font-size:10px;margin-top:2px;color:'+(dv>=0?'var(--green)':'#e55')+'">'+(dv>=0?'+':'')+fmtS(dv)+'</div>':'')
+      +'<div style="height:3px;border-radius:2px;background:var(--border2);margin-top:5px;overflow:hidden"><div style="height:100%;border-radius:2px;background:'+barClr+';width:'+bar+'%"></div></div>'
+      +'</div>';
+  }
+  var mEl=$d('ir-months'); if(mEl)mEl.innerHTML=mhtml;
+
+  // Bar chart
+  if(typeof Chart==='undefined'){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    s.onload=function(){renderIncomeReport(forceNarr);};
+    document.head.appendChild(s); return;
+  }
+  var cData=[],pData=[];
+  for(var m=1;m<=12;m++){
+    var cv=_irMoNet(selYr,m,acct),pv=_irMoNet(prevYr,m,acct);
+    cData.push(cv>0?Math.round(cv):0); pData.push(pv>0?Math.round(pv):0);
+  }
+  if(_irChart)_irChart.destroy();
+  var ctx=$d('ir-chart'); if(!ctx)return;
+  _irChart=new Chart(ctx.getContext('2d'),{
+    type:'bar',
+    data:{labels:_irMoNames,datasets:[
+      {label:String(selYr),data:cData,backgroundColor:'#185FA5',borderRadius:3},
+      {label:String(prevYr),data:pData,backgroundColor:'rgba(136,135,128,0.35)',borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:10},color:'#888780',autoSkip:false},grid:{display:false}},
+        y:{ticks:{font:{size:10},color:'#888780',callback:function(v){return '$'+(v>=1000?(v/1000).toFixed(1)+'k':v);}},grid:{color:'rgba(136,135,128,0.12)'}}
+      }}
+  });
+
+  // Always render narrative fallback on first load; AI on demand
+  var nEl=$d('ir-narrative');
+  if(nEl&&(nEl.textContent==='Click Refresh Summary to generate AI analysis.'||forceNarr)){
+    if(forceNarr){
+      _irGenNarrative(selYr,prevYr,acct,upTo,ytdC,ytdP,delta,pct,avgMo,bestMo,bestV,prevFull,fmtIR,fmtS);
+    } else {
+      // Show instant fallback so the tab isn't blank
+      nEl.style.fontStyle=''; nEl.style.color='var(--text2)';
+      nEl.textContent=_irFallback(selYr,prevYr,upTo,ytdC,delta,pct,avgMo,bestMo,bestV,fmtIR,fmtS);
+    }
+  }
+}
+
+function _irGenNarrative(selYr,prevYr,acct,upTo,ytdC,ytdP,delta,pct,avgMo,bestMo,bestV,prevFull,fmtIR,fmtS){
+  var el=$d('ir-narrative'); if(!el)return;
+  el.style.fontStyle='italic'; el.style.color='var(--text3)'; el.textContent='Generating summary...';
+  var acctName=acct==='ALL'?'all accounts':((ACCOUNTS[acct]&&ACCOUNTS[acct].name)||acct);
+  var moLines=[];
+  for(var m=1;m<=upTo;m++){
+    var cv=_irMoNet(selYr,m,acct),pv=_irMoNet(prevYr,m,acct);
+    if(cv>0||pv>0)moLines.push(_irMoNames[m-1]+': $'+cv.toFixed(0)+' ('+prevYr+': $'+pv.toFixed(0)+')');
+  }
+  var runRate=Math.round(ytdC/upTo*12);
+  var prompt='Summarize options wheel premium income data for a trader. Write exactly 3 plain English sentences with no bullet points, headers, or markdown:\n\n'
+    +'Sentence 1: State the '+selYr+' YTD net premium and whether it is up or down vs '+prevYr+' same period, with the exact dollar difference. If the % change is above 200%, explain this likely reflects more activity or accounts in '+selYr+' rather than pure income growth, and note the prior year amount was $'+ytdP.toFixed(0)+'.\n'
+    +'Sentence 2: Describe the month-to-month trend and name the best month with its amount.\n'
+    +'Sentence 3: State the full-year run rate of $'+runRate+' and compare it to '+prevYr+'\'s full year of $'+prevFull.toFixed(0)+'.\n\n'
+    +'Data ('+acctName+'):\n'
+    +selYr+' YTD through '+_irMoNames[upTo-1]+': $'+ytdC.toFixed(0)+' vs $'+ytdP.toFixed(0)+' in '+prevYr+' ('+(delta>=0?'+':'')+( pct!=null?pct+'%':'n/a')+')\n'
+    +'Monthly avg: $'+avgMo.toFixed(0)+' | Best month: '+(bestMo?_irMoNames[bestMo-1]+' $'+bestV.toFixed(0):'none')+'\n'
+    +'Months: '+moLines.join(' | ')+'\n\n'
+    +'Use second person. Be specific with dollar amounts. No markdown.';
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:220,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var t=(d.content||[]).map(function(b){return b.text||'';}).join('').trim();
+    el.style.fontStyle=''; el.style.color='var(--text2)';
+    el.textContent=t||_irFallback(selYr,prevYr,upTo,ytdC,delta,pct,avgMo,bestMo,bestV,fmtIR,fmtS);
+  }).catch(function(){
+    el.style.fontStyle=''; el.style.color='var(--text2)';
+    el.textContent=_irFallback(selYr,prevYr,upTo,ytdC,delta,pct,avgMo,bestMo,bestV,fmtIR,fmtS);
+  });
+}
+
+function _irFallback(selYr,prevYr,upTo,ytdC,delta,pct,avgMo,bestMo,bestV,fmtIR,fmtS){
+  function fmtIR2(n){return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  var dir=delta>=0?'up':'down';
+  var p=pct!=null?' ('+Math.abs(pct)+'%)':'';
+  return selYr+' YTD net premium is '+fmtIR2(ytdC)+', '+dir+' '+fmtIR2(Math.abs(delta))+p+' vs the same '+upTo+' months in '+prevYr+'. '
+    +'Monthly average is '+fmtIR2(avgMo)+(bestMo?' with '+_irMoNames[bestMo-1]+' being the strongest month at '+fmtIR2(bestV):'')+'.'
+    +' Run rate suggests a full-year total around '+fmtIR2(Math.round(ytdC/upTo*12))+'.';
+}
+
+function irToggleDetail(m){
+  if(_irSelMo===m){irCloseDetail();return;}
+  _irSelMo=m;
+  var acct=($d('ir-acct')||{}).value||'ALL';
+  var selYr=parseInt(($d('ir-yr')||{}).value)||new Date().getFullYear();
+  var prevYr=selYr-1;
+  var dt=$d('ir-detail'), dtTitle=$d('ir-dp-title'), dtBody=$d('ir-dp-body');
+  if(!dt||!dtTitle||!dtBody) return;
+  dtTitle.textContent=_irMoNames[m-1]+' '+selYr+' — ticker breakdown vs '+prevYr;
+  var tkC=(_irByYMTk[String(selYr)]||{})[m]||{};
+  var tkP=(_irByYMTk[String(prevYr)]||{})[m]||{};
+  var allTks=[];
+  Object.keys(tkC).forEach(function(k){if(allTks.indexOf(k)<0)allTks.push(k);});
+  Object.keys(tkP).forEach(function(k){if(allTks.indexOf(k)<0)allTks.push(k);});
+  allTks=allTks.filter(function(tk){
+    if(acct==='ALL')return true;
+    return (tkC[tk]||tkP[tk]||{}).acct===acct||!(tkC[tk]||tkP[tk]||{}).acct;
+  }).sort(function(a,b){
+    var na=r2((tkC[a]&&tkC[a].in||0)-(tkC[a]&&tkC[a].out||0));
+    var nb=r2((tkC[b]&&tkC[b].in||0)-(tkC[b]&&tkC[b].out||0));
+    return nb-na;
+  });
+  function fmtD(n){return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  var rowStyle='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:7px 14px;border-top:1px solid var(--border2);font-size:12px';
+  if(!allTks.length){
+    dtBody.innerHTML='<div style="'+rowStyle+';color:var(--text3)"><div>No data for this month.</div></div>';
+  } else {
+    dtBody.innerHTML='<div style="'+rowStyle+';background:var(--bg2);font-weight:600;border-top:none"><div>Ticker</div><div>'+selYr+' net</div><div>'+prevYr+' net</div><div>Change</div></div>'+
+    allTks.map(function(tk){
+      var cv=r2((tkC[tk]&&tkC[tk].in||0)-(tkC[tk]&&tkC[tk].out||0));
+      var pv=r2((tkP[tk]&&tkP[tk].in||0)-(tkP[tk]&&tkP[tk].out||0));
+      var dv=r2(cv-pv);
+      return '<div style="'+rowStyle+'">'
+        +'<div style="font-weight:600">'+tk+'</div>'
+        +'<div>'+(cv>0?fmtD(cv):'<span style="color:var(--text3)">—</span>')+'</div>'
+        +'<div style="color:var(--text3)">'+(pv>0?fmtD(pv):'—')+'</div>'
+        +'<div style="color:'+(dv>0?'var(--green)':dv<0?'#e55':'var(--text3)')+'">'+(cv>0||pv>0?(dv>=0?'+':'')+fmtD(dv):'—')+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  dt.style.display='block';
+  renderIncomeReport();
+}
+
+function irCloseDetail(){_irSelMo=null;var dt=$d('ir-detail');if(dt)dt.style.display='none';renderIncomeReport();}
+// ==============================
 </script>
 </body>
 </html>
