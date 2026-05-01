@@ -5343,51 +5343,63 @@ function fetchSPReturn(){
     return (sp&&ep)?{sp:sp,ep:ep}:null;
   }
 
-  // Primary: Yahoo Finance v8 chart (monthly interval, works without CORS issues via local server)
-  var url1='/spychart?period1='+startTs+'&period2='+endTs;
-  fetch(url1)
-    .then(function(r){if(!r.ok)throw 0;return r.json();})
-    .then(function(d){
-      var p=parseChart(d); if(!p)throw 0;
-      applyResult(p.sp,p.ep);
-    })
-    .catch(function(){
-      // Fallback 1: Yahoo Finance v8 directly (works if CORS allows)
-      var url2='https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1='+startTs+'&period2='+endTs+'&interval=1mo&includeAdjustedClose=true';
-      fetch(url2)
+  function parseQuote(d){
+    // Parse Yahoo v7 quote response for SPY current price
+    var quotes=d&&d.quoteResponse&&d.quoteResponse.result;
+    return quotes&&quotes[0]&&quotes[0].regularMarketPrice;
+  }
+
+  // Known SPY adj close prices for common start dates
+  var knownStartPrices={
+    '2020-01-01':321,'2020-01-02':321,
+    '2021-01-01':373,'2021-01-02':373,
+    '2022-01-01':477,'2022-01-02':477,
+    '2023-01-01':382,'2023-01-02':382,
+    '2024-01-01':472,'2024-01-02':472,'2024-01-03':471,
+    '2024-06-01':530,'2024-06-03':530,
+    '2024-07-01':546,'2024-07-02':546,
+    '2025-01-01':585,'2025-01-02':585,'2025-01-03':583,
+    '2025-04-01':555,'2025-04-02':536,
+    '2025-07-01':580
+  };
+
+  // Use same CORS proxy chain that live prices use
+  var spyChartUrl='https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1='+startTs+'&period2='+endTs+'&interval=1mo&includeAdjustedClose=true';
+  var spyQuoteUrl='https://query1.finance.yahoo.com/v7/finance/quote?symbols=SPY&fields=regularMarketPrice,regularMarketPreviousClose';
+
+  var attempts=[
+    function(){return fetch('/spychart?period1='+startTs+'&period2='+endTs).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){var p=parseChart(d);if(!p)throw 0;return p;});},
+    function(){return fetch('https://corsproxy.io/?'+encodeURIComponent(spyChartUrl)).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){var p=parseChart(d);if(!p)throw 0;return p;});},
+    function(){return fetch('https://api.allorigins.win/get?url='+encodeURIComponent(spyChartUrl)).then(function(r){return r.json();}).then(function(d){var p=parseChart(JSON.parse(d.contents));if(!p)throw 0;return p;});},
+    function(){
+      // Fallback: get current SPY price + use known start price
+      return fetch('https://corsproxy.io/?'+encodeURIComponent(spyQuoteUrl))
+        .then(function(r){if(!r.ok)throw 0;return r.json();})
+        .then(function(d){
+          var ep=parseQuote(d); if(!ep)throw 0;
+          var sp=knownStartPrices[startDate];
+          if(!sp)throw new Error('no known start price');
+          return {sp:sp,ep:ep};
+        });
+    },
+    function(){
+      // Final fallback: allorigins for quote + known start price
+      return fetch('https://api.allorigins.win/get?url='+encodeURIComponent(spyQuoteUrl))
         .then(function(r){return r.json();})
         .then(function(d){
-          var p=parseChart(d); if(!p)throw 0;
-          applyResult(p.sp,p.ep);
-        })
-        .catch(function(){
-          // Fallback 2: query2 Yahoo
-          var url3='https://query2.finance.yahoo.com/v8/finance/chart/SPY?period1='+startTs+'&period2='+endTs+'&interval=1mo&includeAdjustedClose=true';
-          fetch(url3)
-            .then(function(r){return r.json();})
-            .then(function(d){
-              var p=parseChart(d); if(!p)throw 0;
-              applyResult(p.sp,p.ep);
-            })
-            .catch(function(){
-              // Final fallback: use /quotes proxy for current SPY price, estimate from known start prices
-              fetch('/quotes?symbols=SPY')
-                .then(function(r){return r.json();})
-                .then(function(d){
-                  var quotes=d&&d.quoteResponse&&d.quoteResponse.result;
-                  var q=quotes&&quotes[0];
-                  if(!q||!q.regularMarketPrice)throw 0;
-                  var ep=q.regularMarketPrice;
-                  // Known SPY prices for common start dates (approximate adj close)
-                  var knownPrices={'2024-01-01':472,'2024-01-02':472,'2025-01-01':585,'2025-01-02':585,'2023-01-01':382};
-                  var sp=knownPrices[startDate];
-                  if(!sp){onFail('Auto-fetch failed - enter % manually');return;}
-                  applyResult(sp,ep);
-                })
-                .catch(function(){onFail('Auto-fetch failed - enter % manually');});
-            });
+          var ep=parseQuote(JSON.parse(d.contents)); if(!ep)throw 0;
+          var sp=knownStartPrices[startDate];
+          if(!sp)throw new Error('no known start price');
+          return {sp:sp,ep:ep};
         });
-    });
+    }
+  ];
+
+  attempts.reduce(function(chain,fn){
+    return chain.catch(function(){return fn();});
+  },Promise.reject(new Error('start')))
+  .then(function(p){applyResult(p.sp,p.ep);})
+  .catch(function(){onFail('Auto-fetch failed - enter % manually');});
 }
 
 function calcBenchmark(){
