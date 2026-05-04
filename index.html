@@ -1862,17 +1862,39 @@ function calcHolding(ticker){
   var h=HOLDINGS[ticker];if(!h)return h;
   var trades=h.trades||[];
   var premIn=0,premOut=0,divs=0;
+  // Determine effective reset date for adj CB calculation:
+  // Priority 1: manual cbResetDate set by user
+  // Priority 2: auto-detect from most recent assignment trade
+  //   (when shares get called away and you get reassigned, new cycle starts fresh)
+  // All-time net premium always counts everything — only adj CB uses the reset date
+  var manualReset=h.cbResetDate||null;
+  var autoReset=null;
+  // Find the most recent assignment date — that's when the current position started
+  var sortedTrades=trades.slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+  // Find all assignment dates, pick the latest one
+  sortedTrades.forEach(function(t){
+    if(t.type==='assignment'&&t.date){
+      if(!autoReset||t.date>autoReset) autoReset=t.date;
+    }
+  });
+  // Use manual override if set, otherwise auto-detect from last assignment
+  var resetDate=manualReset||(autoReset||null);
+  var cbPremIn=0,cbPremOut=0; // premiums for adj CB calc only (post-reset)
   trades.forEach(function(t){
     var val=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
     if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){
       premIn=r2(premIn+val);
+      if(!resetDate||t.date>=resetDate) cbPremIn=r2(cbPremIn+val);
     } else if(t.type==='bought_close'){
       premOut=r2(premOut+val);
+      if(!resetDate||t.date>=resetDate) cbPremOut=r2(cbPremOut+val);
     } else if(t.type==='dividend'){
       divs=r2(divs+(t.amount||0));
     }
   });
   var net=r2(premIn-premOut+divs);
+  var cbNet=resetDate?r2(cbPremIn-cbPremOut):net; // net used for adj CB calc
+  h._autoResetDate=autoReset; // store for display purposes
 
   // Monthly/weekly run rate from actual trade dates
   var now=new Date();
@@ -1903,9 +1925,9 @@ function calcHolding(ticker){
   // Use origCB from holding if shares were zeroed by positions CSV but we still have history
   var effectiveShares = totalShares > 0 ? totalShares : (origCB > 0 && net > 0 ? 100 : 0);
   if(effectiveShares > 0 && origCB > 0){
-    // Calculate adj CB using actual shares if available, else assume 100 (1 contract baseline)
+    // Use cbNet (post-reset premiums only) for adj CB if a reset date is set
     var sharesForCalc = totalShares > 0 ? totalShares : effectiveShares;
-    adjCB = r2(origCB - net/sharesForCalc);
+    adjCB = r2(origCB - cbNet/sharesForCalc);
     cbRed = r2(origCB - adjCB);
     cbPct = Math.min(Math.round(cbRed/origCB*100), 100);
     isFullyRecovered = adjCB <= 0;
@@ -2657,6 +2679,7 @@ function _renderAllNow(){
       +'<td style="position:sticky;right:0;background:var(--bg2);border-left:1px solid var(--border)"'+rs+'><div style="display:flex;gap:5px;justify-content:flex-end;padding:2px 4px">'
         +(isWheel?'<button class="act-btn green" onclick="toggleTrades(\''+ticker+'\')">Trades</button>':'')
         +(isWheel?'<button class="act-btn" onclick="fillAdvisor(\''+ticker+'\')">Advisor</button>':'')
+        +(isWheel?'<button class="act-btn" onclick="setCBReset(\''+ticker+'\')" title="Reset adj CB start date — use when reassigned after a gap" style="font-size:9px;opacity:0.7;'+(HOLDINGS[ticker]&&HOLDINGS[ticker].cbResetDate?'color:var(--amber);opacity:1':'')+'">CB Reset</button>':'')
         +'<button class="del-btn" onclick="delHolding(\''+ticker+'\')">&#10005;</button>'
       +'</div></td>'
     +'</tr>';
@@ -2699,7 +2722,9 @@ function _renderAllNow(){
       else if(t.type==='expired')detail='Expired worthless ? <span style="color:var(--text3)">(premium counted at sell)</span>';
       else if(t.type==='bought_close')detail='<span style="color:var(--red)">'+fmt((t.premium||0)*(t.contracts||1)*100)+' debit</span>';
       else if(t.type==='dividend')detail='<span style="color:var(--amber)">'+fmt(t.amount)+'</span>';
-      return'<div class="trade-row"><span class="badge '+bc+'">'+lbl+'</span>'
+      var effectiveReset=h.cbResetDate||h._autoResetDate||null;
+      var isPreReset=effectiveReset&&t.date&&t.date<effectiveReset;
+      return'<div class="trade-row" style="'+(isPreReset?'opacity:0.45;border-left:2px solid var(--amber)':'')+'"><span class="badge '+bc+'">'+lbl+'</span>'+(isPreReset?'<span style="font-size:9px;color:var(--amber);margin-right:4px;font-family:DM Mono,monospace">pre-reset</span>':'')
         +'<div style="flex:1;font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text2)">'+detail+(t.notes?' . <span style="color:var(--text3);font-size:10px">'+t.notes+'</span>':'')+'</div>'
         +'<span style="font-size:10px;color:var(--text3);font-family:\'DM Mono\',monospace;margin-right:6px">'+t.date+'</span>'
         +'<button class="del-btn" onclick="delTrade(\''+ticker+'\','+ri+')" title="Delete this trade">x</button></div>';
@@ -2707,7 +2732,7 @@ function _renderAllNow(){
 
     panels+='<div id="tradepanel-'+ticker+'" class="card" style="display:none;margin-top:0;border-top:2px solid rgba(0,200,150,0.3);border-radius:0 0 var(--rl) var(--rl);background:var(--bg3)">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-        +'<div style="font-size:12px;font-weight:700;color:var(--green);font-family:\'DM Mono\',monospace;text-transform:uppercase;letter-spacing:0.05em">'+ticker+' . '+trades.length+' trades . '+fmt(h.netPrem)+' net</div>'
+        +'<div style="font-size:12px;font-weight:700;color:var(--green);font-family:\'DM Mono\',monospace;text-transform:uppercase;letter-spacing:0.05em">'+ticker+' . '+trades.length+' trades . '+fmt(h.netPrem)+' net'+(h.cbResetDate?'<span style="color:var(--amber);font-size:10px;margin-left:8px;font-weight:400">⚙ manual CB reset: '+h.cbResetDate+'</span>':h._autoResetDate?'<span style="color:var(--blue);font-size:10px;margin-left:8px;font-weight:400">⟳ auto CB reset from last assignment: '+h._autoResetDate+' (adj CB counts post-assignment only)</span>':'')+'</div>'
         +'<button class="del-btn" onclick="toggleTrades(\''+ticker+'\')">x close</button>'
       +'</div>'
       +(log||'<p style="font-size:12px;color:var(--text3);font-family:\'DM Mono\',monospace">No trades yet. Use Add Trade tab.</p>')
@@ -2760,6 +2785,40 @@ function toggleTrades(ticker){
 }
 function setPrice(t,v){if(HOLDINGS[t])HOLDINGS[t].currentPrice=parseFloat(v)||0;autoSave();renderAll();}
 function setCB(t,v){var cb=parseFloat(v)||0;if(cb>0&&HOLDINGS[t]){HOLDINGS[t].origCB=cb;HOLDINGS[t].adjCB=cb;autoSave();renderAll();}}
+
+function setCBReset(ticker){
+  var h=HOLDINGS[ticker];
+  if(!h)return;
+  var current=h.cbResetDate||'';
+  var msg='Set adj CB reset date for '+ticker+'\n\n'
+    +'Trades BEFORE this date will not count toward adj CB\n'
+    +'(all-time net premium total stays unchanged)\n\n'
+    +'Enter date (YYYY-MM-DD) or leave blank to clear reset:\n'
+    +(current?'Current reset date: '+current:'No reset date set');
+  var val=prompt(msg, current||new Date().toISOString().slice(0,10));
+  if(val===null)return; // cancelled
+  val=val.trim();
+  if(val&&!/^\d{4}-\d{2}-\d{2}$/.test(val)){
+    alert('Invalid date format. Use YYYY-MM-DD (e.g. 2026-04-01)');
+    return;
+  }
+  if(val){
+    h.cbResetDate=val;
+    // Also update origCB to the cost basis of the new position if user wants
+    var newCB=prompt('Optional: enter new orig CB/share for this position (the price you paid when reassigned).\nLeave blank to keep current origCB of $'+fmt(h.origCB)+':', '');
+    if(newCB!==null&&newCB.trim()&&!isNaN(parseFloat(newCB.trim()))){
+      h.origCB=parseFloat(newCB.trim());
+    }
+  } else {
+    delete h.cbResetDate;
+  }
+  autoSave();
+  renderAll();
+  alert(val
+    ?'CB reset date set to '+val+'.\nAdj CB for '+ticker+' now only counts premiums earned on or after this date.'
+    :'CB reset cleared for '+ticker+'. All historical premiums now count toward adj CB.');
+}
+
 function delHolding(t){
   var hld=HOLDINGS[t]; if(!hld) return;
   var trades=hld.trades||[];
