@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Options Intelligence v20260420-1826 -->
+<!-- Options Intelligence v20260428-positions-fix -->
 
 <html lang="en">
 <head>
@@ -207,7 +207,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <div class="lock-title" id="lock-title">Options Intelligence</div>
     <div class="lock-sub" id="lock-sub">Enter your password to access your tracker.</div>
     <div style="font-size:11px;color:#555c66;font-family:'DM Mono',monospace;margin:-14px 0 18px;text-align:center;line-height:1.8">
-      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_fixed2.html</span><br/>
+      <span style="background:#1c1f24;border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:2px 10px;font-size:11px;color:#8b9097">wheel_tracker_v21.html</span><br/>
       <span id="lock-url-display" style="font-size:10px;opacity:0.5;word-break:break-all"></span>
       <script>
         (function(){
@@ -226,6 +226,9 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
     <input type="password" class="lock-input" id="lock-pw2" placeholder="Confirm password" style="display:none" onkeydown="if(event.key==='Enter')lockAction()"/>
     <button class="lock-btn" id="lock-action-btn" onclick="lockAction()">Unlock</button>
     <div class="lock-err" id="lock-err"></div>
+      <div style="margin-top:12px;font-size:11px;font-family:'DM Mono',monospace;text-align:center">
+        <a href="#" onclick="localStorage.removeItem('oi_master_pw');location.reload();return false;" style="color:#00c896;text-decoration:none;opacity:0.8">Forgot password? Reset &amp; reload</a>
+      </div>
   </div>
 </div>
 
@@ -280,6 +283,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
   <button class="nb" onclick="goTab('quality',this)">🎯 Strike Quality</button>
   <button class="nb" onclick="goTab('stockanalysis',this)">🔬 Stock Analysis</button>
   <button class="nb" onclick="goTab('tax',this);renderTaxPlanner()">💸 Tax Planner</button>
+  <button class="nb" onclick="goTab('report',this)">📊 Income Report</button>
   <button class="nb" onclick="goTab('upload',this)">Upload Fidelity</button>
   <button class="nb" onclick="goTab('addstock',this)">Add Stock</button>
   <button class="nb" onclick="goTab('addtrade',this)">Add Trade</button>
@@ -296,6 +300,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 
 <!-- ALL HOLDINGS -->
 <div class="tab" id="tab-holdings">
+  <div id="archived-badge" onclick="showArchivedPanel()" style="display:none;cursor:pointer;margin-bottom:10px;padding:7px 16px;background:rgba(255,200,0,0.07);border:1px solid rgba(255,200,0,0.25);border-radius:8px;color:var(--amber);font-size:12px;font-family:'DM Mono',monospace"></div>
   <div id="expiry-calendar-wrap" style="margin-bottom:14px"></div>
   <div class="card" style="margin-bottom:14px;padding:0;overflow:hidden" id="trade-log-card">
     <div style="padding:12px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="toggleTradeLogPanel()">
@@ -674,16 +679,11 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 
 <!-- BENCHMARK -->
 <div class="tab" id="tab-benchmark">
-  <div class="card">
+
+  <!-- controls row -->
+  <div class="card" style="margin-bottom:14px">
     <div class="sl">📊 Performance Benchmark</div>
-    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:14px 18px;margin-bottom:18px;font-family:DM Mono,monospace">
-      <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em">What is the Benchmark?</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.8">
-        Every wheel trader eventually asks: <em>"Is all this work actually beating just buying and holding the S&P 500?"</em> The honest answer requires math most brokers will not do for you.<br><br>
-        This benchmark calculates your <strong style="color:var(--green)">wheel strategy yield</strong> — premium collected as a percentage of your cost basis — and compares it against S&P 500 returns over the same period. It also breaks down your total return into three components: unrealized stock appreciation, realized premium income, and cost basis reduction. You'll finally know if the wheel is worth it for your specific portfolio.
-      </div>
-    </div>
-    <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap">
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
       <div class="fg" style="margin:0"><label>Portfolio start date</label><input type="date" id="bench-start" value="2024-01-01" onchange="fetchSPReturn()"/></div>
       <div class="fg" style="margin:0">
         <label>S&P 500 return since start (%)</label>
@@ -695,8 +695,19 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
       </div>
       <button class="btn" onclick="calcBenchmark()" style="height:38px;padding:0 20px">Calculate</button>
     </div>
-    <div id="benchmark-result"></div>
   </div>
+
+  <!-- sub-tabs -->
+  <div style="display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px">
+    <button class="nb active" id="btab-portfolio" onclick="showBenchTab('portfolio',this)" style="font-size:12px;padding:8px 14px">Portfolio</button>
+    <button class="nb" id="btab-byaccount" onclick="showBenchTab('byaccount',this)" style="font-size:12px;padding:8px 14px">By Account</button>
+    <button class="nb" id="btab-byticker" onclick="showBenchTab('byticker',this)" style="font-size:12px;padding:8px 14px">By Ticker</button>
+  </div>
+
+  <div id="bench-portfolio" class="bench-panel"></div>
+  <div id="bench-byaccount" class="bench-panel" style="display:none"></div>
+  <div id="bench-byticker" class="bench-panel" style="display:none"></div>
+
 </div>
 
 <div class="tab" id="tab-chat">
@@ -872,16 +883,45 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 </div>
 
 <!-- UPLOAD -->
+<div class="tab" id="tab-report">
+  <div class="card" style="max-width:100%">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="sl" style="margin:0">Income Report</div>
+      <select id="ir-acct" class="sel" style="font-size:12px;padding:4px 8px" onchange="renderIncomeReport()"></select>
+      <span id="ir-yr-label" style="font-size:12px;color:var(--text3);padding:4px 8px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--border2)"></span>
+      <select id="ir-yr" style="display:none"></select>
+      <button class="btn" onclick="renderIncomeReport(true)" style="margin-left:auto;font-size:11px;padding:5px 12px">&#8635; Refresh Summary</button>
+    </div>
+    <div id="ir-summary" style="margin-bottom:14px;overflow-x:auto"></div>
+    <div id="ir-narrative" style="background:var(--bg2);border-radius:var(--r);padding:12px 16px;margin-bottom:14px;font-size:12px;line-height:1.8;color:var(--text2);border-left:2px solid var(--border2);min-height:48px">Click Refresh Summary to generate AI analysis.</div>
+    <div id="ir-months" style="display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:14px"></div>
+    <div id="ir-detail" style="display:none;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-bottom:14px">
+      <div style="background:var(--bg2);padding:8px 14px;font-size:11px;font-weight:600;color:var(--text2);display:flex;justify-content:space-between">
+        <span id="ir-dp-title">Month detail</span>
+        <span style="cursor:pointer;color:var(--text3)" onclick="irCloseDetail()">close ×</span>
+      </div>
+      <div id="ir-dp-body"></div>
+    </div>
+    <div style="display:flex;gap:14px;font-size:11px;color:var(--text3);margin-bottom:8px">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#185FA5;margin-right:4px"></span><span id="ir-leg-curr">2026</span></span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(136,135,128,0.4);margin-right:4px"></span><span id="ir-leg-prev">2025</span></span>
+    </div>
+    <div style="position:relative;height:200px">
+      <canvas id="ir-chart" role="img" aria-label="Monthly premium income bar chart"></canvas>
+    </div>
+  </div>
+</div>
+
 <div class="tab" id="tab-upload">
   <div class="card">
-    <div class="sl">Upload Fidelity Activity &amp; Orders CSV</div>
+    <div class="sl">Upload Fidelity CSV Files</div>
     <div class="hint">
-      <strong>Two ways to sync — use both for complete data:</strong><br><br>
-      <strong>1. Positions CSV</strong> → Fidelity.com → Accounts → Positions → <code>Download</code> (top right)<br>
-      ✅ Sets shares + cost basis for all holdings<br><br>
-      <strong>2. Activity &amp; Orders CSV</strong> → Accounts → Activity &amp; Orders → <code>Download</code><br>
-      ✅ Imports all options trades (sold calls/puts, expirations, buybacks)<br><br>
-      Upload multiple date ranges — duplicates are automatically skipped.
+      <strong>Correct upload order — Activity first, then Positions:</strong><br><br>
+      <strong>Step 1 — Activity &amp; Orders CSV</strong> → Fidelity → Accounts → Activity &amp; Orders → <code>Download</code><br>
+      ✅ Builds premium totals, trade history, adj cost basis &nbsp;·&nbsp; File: <code>History_for_Account_*.csv</code><br><br>
+      <strong>Step 2 — Positions CSV</strong> (optional, run after Activity) → Accounts → Positions → <code>Download</code><br>
+      ✅ Updates shares, current price &amp; original CB only — <strong style="color:var(--green)">never reduces totals or touches trade history</strong> &nbsp;·&nbsp; File: <code>Portfolio_Positions_*.csv</code><br><br>
+      ⚡ To start fresh: use <strong>Clear All</strong> (top right), then upload year-to-date Activity CSV. Duplicates always skipped.
     </div>
 
     <!-- Account selector — must create one before uploading -->
@@ -909,20 +949,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div>
-        <div class="sl" style="margin-bottom:6px">Step 1 — Sync positions (shares + CB)</div>
-        <div class="dz" id="dz-pos" onclick="checkAccountThenUpload('f-pos')"
-          ondragover="event.preventDefault();this.style.borderColor='var(--green)'"
-          ondragleave="this.style.borderColor=''"
-          ondrop="onDropPos(event)">
-          <div style="font-size:22px;margin-bottom:6px">📊</div>
-          <div style="font-size:12px;color:var(--text2);font-weight:600">Positions CSV</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:DM Mono,monospace">Portfolio_Positions_*.csv</div>
-        </div>
-        <input type="file" id="f-pos" accept=".csv,.txt" style="display:none" onchange="onPickPos(event)"/>
-        <div id="pos-st" class="status"></div>
-      </div>
-      <div>
-        <div class="sl" style="margin-bottom:6px">Step 2 — Import options trades</div>
+        <div class="sl" style="margin-bottom:6px">Step 1 — Import options trades (Activity)</div>
         <div class="dz" id="dz" onclick="checkAccountThenUpload('f-fid')"
           ondragover="event.preventDefault();this.style.borderColor='var(--green)'"
           ondragleave="this.style.borderColor=''"
@@ -930,9 +957,24 @@ header{display:flex;justify-content:space-between;align-items:center;margin-bott
           <div style="font-size:22px;margin-bottom:6px">📋</div>
           <div style="font-size:12px;color:var(--text2);font-weight:600">Activity &amp; Orders CSV</div>
           <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:DM Mono,monospace">History_for_Account_*.csv</div>
+          <div style="font-size:10px;color:var(--green);margin-top:5px;font-family:DM Mono,monospace">Builds premium totals &amp; trade history</div>
         </div>
         <input type="file" id="f-fid" accept=".csv,.txt" style="display:none" onchange="onPickFid(event)"/>
         <div id="fid-st" class="status"></div>
+      </div>
+      <div>
+        <div class="sl" style="margin-bottom:6px">Step 2 — Sync holdings snapshot (Positions)</div>
+        <div class="dz" id="dz-pos" onclick="checkAccountThenUpload('f-pos')"
+          ondragover="event.preventDefault();this.style.borderColor='var(--green)'"
+          ondragleave="this.style.borderColor=''"
+          ondrop="onDropPos(event)">
+          <div style="font-size:22px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;color:var(--text2);font-weight:600">Positions CSV</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:DM Mono,monospace">Portfolio_Positions_*.csv</div>
+          <div style="font-size:10px;color:var(--amber);margin-top:5px;font-family:DM Mono,monospace">Updates shares &amp; price only — totals safe</div>
+        </div>
+        <input type="file" id="f-pos" accept=".csv,.txt" style="display:none" onchange="onPickPos(event)"/>
+        <div id="pos-st" class="status"></div>
       </div>
     </div>
 
@@ -1246,6 +1288,15 @@ function setActiveAccount(id){
   window._premYr='ALL';
   window._premTk='ALL';
   renderAll();
+  // Sync Income Report dropdown if visible
+  var irAcct=$d('ir-acct');
+  if(irAcct){
+    if(id==='ALL') irAcct.value='ALL';
+    else if(ACCOUNTS[id]) irAcct.value=id;
+  }
+  // If income report tab is open, re-render it
+  var repTab=$d('tab-report');
+  if(repTab&&repTab.classList.contains('active')) renderIncomeReport();
   // If income planner is open, refresh it too
   var incTab=$d('tab-income');
   if(incTab&&incTab.classList.contains('active')){
@@ -1435,7 +1486,7 @@ function exportWeekSnapshot(){
       var amt=t.amount>0?t.amount:((t.premium||0)*(t.contracts||1)*100);
       var row={ticker:ticker,date:t.date,strike:t.strike,contracts:t.contracts||1,premium:t.premium||0,amount:amt,type:t.type,notes:t.notes||''};
       if(t.type==='expired')byAcct[acctId].expired.push(row);
-      else if(t.type==='sold_call'||t.type==='sold_put'){byAcct[acctId].collected.push(row);totIn+=amt;}
+      else if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){byAcct[acctId].collected.push(row);totIn+=amt;}
       else if(t.type==='bought_close'){byAcct[acctId].closed.push(row);totOut+=amt;}
       else if(t.type==='assignment')byAcct[acctId].assigned.push(row);
     });
@@ -1452,7 +1503,7 @@ function exportWeekSnapshot(){
     var opTrades=h.trades||[];
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
-    ['sold_put','sold_call'].forEach(function(sellType){
+    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
@@ -1668,21 +1719,34 @@ function importData(evt){
     try{
       var d=JSON.parse(e.target.result);
       if(!d.HOLDINGS){alert('Invalid file - no HOLDINGS data found.');return;}
-      // Wipe everything first
-      try{
-        var keys=[];
-        for(var i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
-        keys.forEach(function(k){if(k&&k.indexOf('wheel_tracker')===0) localStorage.removeItem(k);});
-      }catch(e2){}
-      HOLDINGS={}; ACCOUNTS={};
-      window._premYr='ALL'; window._premTk='ALL'; ACTIVE_ACCOUNT='ALL';
-      // Load fresh data
-      HOLDINGS=d.HOLDINGS;
-      if(d.ACCOUNTS) ACCOUNTS=d.ACCOUNTS;
-      // Ensure all holdings have ticker field and normalize account tags
-      Object.keys(HOLDINGS).forEach(function(k){
-        if(!HOLDINGS[k].ticker) HOLDINGS[k].ticker=k.split('_')[0];
-        if(HOLDINGS[k].account==='default') HOLDINGS[k].account='';
+      // MERGE mode: add/update without wiping existing data
+      var isFullExport = Object.keys(d.HOLDINGS).length > 5; // heuristic: full export has many holdings
+      var tradeKey=function(t){return (t.date||'')+'|'+(t.type||'')+'|'+(t.strike||0)+'|'+(t.contracts||0);};
+
+      // Merge accounts
+      if(d.ACCOUNTS){
+        Object.keys(d.ACCOUNTS).forEach(function(ak){
+          if(!ACCOUNTS[ak]) ACCOUNTS[ak]=d.ACCOUNTS[ak];
+        });
+      }
+
+      // Merge holdings - for each incoming account, REPLACE all holdings of that account
+      // This prevents duplicates when re-importing the same account JSON
+      var incomingAccounts=Object.keys(d.ACCOUNTS||{});
+      if(incomingAccounts.length>0){
+        // Remove all existing holdings that belong to the incoming accounts
+        incomingAccounts.forEach(function(ak){
+          Object.keys(HOLDINGS).forEach(function(hk){
+            if(HOLDINGS[hk].account===ak) delete HOLDINGS[hk];
+          });
+        });
+      }
+      // Now add all incoming holdings fresh
+      Object.keys(d.HOLDINGS).forEach(function(hk){
+        var incoming=d.HOLDINGS[hk];
+        if(!incoming.ticker) incoming.ticker=hk.split('_')[0];
+        if(incoming.account==='default') incoming.account='';
+        HOLDINGS[hk]=incoming;
       });
       repairZeroAmountTrades();
       save();
@@ -1692,35 +1756,32 @@ function importData(evt){
       var acctBar=$d('global-account-bar');
       if(acctBar)acctBar.style.display='flex';
       renderAll();
+      // Refresh income report if it was open
+      var repTab=$d('tab-report');
+      if(repTab&&repTab.classList.contains('active')) setTimeout(renderIncomeReport,100);
       var hCount=Object.keys(HOLDINGS).length;
       var tCount=Object.values(HOLDINGS).reduce(function(s,h){return s+(h.trades||[]).length;},0);
       var wheelCount=Object.values(HOLDINGS).filter(function(h){return h.type==='wheel';}).length;
-      alert('[OK] Import complete\n\n'+hCount+' holdings ('+wheelCount+' wheel) . '+Object.keys(ACCOUNTS).length+' accounts . '+tCount+' trades\n\nData loaded cleanly.');
+      alert('[OK] Import merged\n\n'+hCount+' holdings ('+wheelCount+' wheel) . '+Object.keys(ACCOUNTS).length+' accounts . '+tCount+' trades\n\nNew data merged with existing. No existing data was removed.');
     }catch(err){alert('Import failed - '+err.message);}
   };
   r.readAsText(f); evt.target.value='';
 }
 function clearAll(){
-  if(confirm('Clear ALL holdings and trades?\n\nThis cannot be undone. Export first if you want a backup.')){
-    // Nuclear clear - wipe ALL localStorage for this page
-    try{ localStorage.clear(); }catch(e){}
+  if(confirm('Clear ALL holdings, trades and accounts?\n\nThis cannot be undone. Export first if you want a backup.\n\nPage will reload after clearing.')){
+    // Truly nuclear - wipe ALL localStorage keys
+    try{
+      var keys=[];
+      for(var i=0;i<localStorage.length;i++) keys.push(localStorage.key(i));
+      keys.forEach(function(k){ try{localStorage.removeItem(k);}catch(e){} });
+      localStorage.clear();
+    }catch(e){}
+    // Clear all in-memory globals too
     HOLDINGS={};
+    ACCOUNTS={};
     ACTIVE_ACCOUNT='ALL';
-    window._premYr='ALL'; window._premTk='ALL';
-    window._dashActiveYr=null;
-    window._ibRows=[]; window._ibNextId=1;
-    // Restore default accounts
-    ACCOUNTS={
-      acct_joint_account:{name:'Joint Account'},
-      acct_joint_rental:{name:'Joint Rental'},
-      acct_ira:{name:'IRA'},
-      acct_roth_ira:{name:'Roth IRA'}
-    };
-    autoSave();
-    renderAll();
-    var ind=$d('save-ind');
-    if(ind){ind.textContent='? Cleared - fresh start';ind.style.color='var(--green)';}
-    alert('All data cleared. Now upload your CSVs fresh.');
+    // Reload page fresh - nothing persists in memory
+    setTimeout(function(){ location.reload(true); }, 200);
   }
 }
 function removeDuplicateTrades(){
@@ -1807,17 +1868,39 @@ function calcHolding(ticker){
   var h=HOLDINGS[ticker];if(!h)return h;
   var trades=h.trades||[];
   var premIn=0,premOut=0,divs=0;
+  // Determine effective reset date for adj CB calculation:
+  // Priority 1: manual cbResetDate set by user
+  // Priority 2: auto-detect from most recent assignment trade
+  //   (when shares get called away and you get reassigned, new cycle starts fresh)
+  // All-time net premium always counts everything — only adj CB uses the reset date
+  var manualReset=h.cbResetDate||null;
+  var autoReset=null;
+  // Find the most recent assignment date — that's when the current position started
+  var sortedTrades=trades.slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+  // Find all assignment dates, pick the latest one
+  sortedTrades.forEach(function(t){
+    if(t.type==='assignment'&&t.date){
+      if(!autoReset||t.date>autoReset) autoReset=t.date;
+    }
+  });
+  // Use manual override if set, otherwise auto-detect from last assignment
+  var resetDate=manualReset||(autoReset||null);
+  var cbPremIn=0,cbPremOut=0; // premiums for adj CB calc only (post-reset)
   trades.forEach(function(t){
     var val=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
-    if(t.type==='sold_call'||t.type==='sold_put'){
+    if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){
       premIn=r2(premIn+val);
+      if(!resetDate||t.date>=resetDate) cbPremIn=r2(cbPremIn+val);
     } else if(t.type==='bought_close'){
       premOut=r2(premOut+val);
+      if(!resetDate||t.date>=resetDate) cbPremOut=r2(cbPremOut+val);
     } else if(t.type==='dividend'){
       divs=r2(divs+(t.amount||0));
     }
   });
   var net=r2(premIn-premOut+divs);
+  var cbNet=resetDate?r2(cbPremIn-cbPremOut):net; // net used for adj CB calc
+  h._autoResetDate=autoReset; // store for display purposes
 
   // Monthly/weekly run rate from actual trade dates
   var now=new Date();
@@ -1828,7 +1911,7 @@ function calcHolding(ticker){
     var td=t.date?new Date(t.date+'T12:00:00'):null;
     if(!td)return;
     var age=now-td;
-    if(t.type==='sold_call'||t.type==='sold_put'){
+    if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){
       if(age<=ms30)prem30d=r2(prem30d+val);
       if(age<=ms8wk)prem8wk=r2(prem8wk+val);
     } else if(t.type==='bought_close'){
@@ -1845,18 +1928,20 @@ function calcHolding(ticker){
   // DO NOT estimate shares from contracts for options-only positions -
   // it produces wrong numbers. Only use recorded shares.
   var adjCB, cbRed, cbPct, isFullyRecovered;
-  if(totalShares>0 && origCB>0){
-    // Full position - calculate adj CB properly
-    adjCB = r2(origCB - net/totalShares);
+  // Use origCB from holding if shares were zeroed by positions CSV but we still have history
+  var effectiveShares = totalShares > 0 ? totalShares : (origCB > 0 && net > 0 ? 100 : 0);
+  if(effectiveShares > 0 && origCB > 0){
+    // Use cbNet (post-reset premiums only) for adj CB if a reset date is set
+    var sharesForCalc = totalShares > 0 ? totalShares : effectiveShares;
+    adjCB = r2(origCB - cbNet/sharesForCalc);
     cbRed = r2(origCB - adjCB);
     cbPct = Math.min(Math.round(cbRed/origCB*100), 100);
     isFullyRecovered = adjCB <= 0;
-  } else if(totalShares>0 && origCB===0){
+  } else if(totalShares > 0 && origCB === 0){
     // Have shares but no cost basis set yet
     adjCB = 0; cbRed = 0; cbPct = 0; isFullyRecovered = false;
   } else {
-    // Options-only (CSPs, no shares assigned, or no CB data)
-    // Show net premium but no adj CB calculation
+    // Options-only (CSPs, no shares assigned, no CB data)
     adjCB = null; cbRed = 0; cbPct = 0; isFullyRecovered = false;
   }
 
@@ -1917,10 +2002,25 @@ function _renderAllNow(){
   var globalBar=$d('global-account-bar');
   if(globalBar)globalBar.innerHTML=acctBarHtml;
 
-  // Filter tickers by active account
+  // Filter tickers by active account (exclude archived with no live positions)
   var tickers=allTickers.filter(function(t){
-    if(ACTIVE_ACCOUNT==='ALL')return true;
-    var acct=HOLDINGS[t].account||'';
+    var h=HOLDINGS[t];
+    if(!h) return false;
+    var nowD=new Date(); nowD.setHours(0,0,0,0);
+    var hasOpenPosition=(h.trades||[]).some(function(tr){
+      if(tr.type!=='sold_put'&&tr.type!=='sold_call') return false;
+      if(!tr.expiry) return false;
+      return new Date(tr.expiry+'T12:00:00')>=nowD;
+    });
+    // Hide archived holdings with no open positions
+    if(h.archived && !hasOpenPosition) return false;
+    // Hide zeroed-out holdings (shares=0 from positions CSV) with no open positions
+    // These are stocks you no longer hold — keep premium history but hide from table
+    if(h.shares===0 && !hasOpenPosition && h.type==='wheel' && (h.trades||[]).length>0){
+      return false;
+    }
+    if(ACTIVE_ACCOUNT==='ALL') return true;
+    var acct=(h&&h.account)||'';
     return acct===ACTIVE_ACCOUNT||!acct;
   });
 
@@ -1947,6 +2047,17 @@ function _renderAllNow(){
   }
 
   // -- Portfolio summary numbers --
+  // IMPORTANT: Use ALL tickers for this account for financial totals (including hidden/zeroed ones)
+  // so that deleting shares from Positions CSV never reduces premium totals.
+  // `tickers` is only used for the visible table rows below.
+  var summaryTickers=allTickers.filter(function(t){
+    var h=HOLDINGS[t];
+    if(!h) return false;
+    if(ACTIVE_ACCOUNT==='ALL') return true;
+    var acct=(h&&h.account)||'';
+    return acct===ACTIVE_ACCOUNT||!acct;
+  });
+
   var totCostOrig=0,totVal=0,totPremIn=0,totPremOut=0,totDivs=0,wheelCount=0;
   var totMonthly=0,totWeekly=0,tot30d=0;
   // Master data structure: byYear[yr][ticker] = {in, out, divs, trades[]}
@@ -1954,7 +2065,7 @@ function _renderAllNow(){
   var byYear={};
   var byYearMonth={}; // {2026: {1:{in,out,net}, 2:{...}, ...}, 2025:{...}}
   var wheelTickers=[];
-  tickers.forEach(function(t){
+  summaryTickers.forEach(function(t){
     var h=calcHolding(t);if(!h)return;
     if(h.origCB>0)totCostOrig+=h.totalShares*h.origCB;
     totVal+=h.totalShares*(h.currentPrice||0);
@@ -2364,7 +2475,7 @@ function _renderAllNow(){
       showTrades.forEach(function(item){
         var t=item.tr,tk=item.tk;
         var amt=0;
-        if(t.type==='sold_call'||t.type==='sold_put')amt=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
+        if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close')amt=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
         else if(t.type==='bought_close')amt=-(t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100));
         else if(t.type==='dividend')amt=t.amount||0;
         running=r2(running+amt);
@@ -2468,7 +2579,7 @@ function _renderAllNow(){
       var opTrades=h.trades||[];
       var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
       var opCutoff=new Date(now.getTime()-60*86400000);
-      ['sold_put','sold_call'].forEach(function(sellType){
+      ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
         for(var opi=0;opi<opSorted.length;opi++){
           var opT=opSorted[opi];
           if(opT.type!==sellType)continue;
@@ -2486,8 +2597,10 @@ function _renderAllNow(){
               for(var opk=0;opk<opSorted.length;opk++){
                 var opN=opSorted[opk];
                 if(opN.type!==sellType||opN===opT)continue;
+                // Same-strike only: roll to different strike doesn't interrupt close
+                if(opN.strike&&opT.strike&&String(opN.strike)!==String(opT.strike))continue;
                 var opNDate=new Date(opN.date+'T12:00:00');
-                if(opNDate>opDate&&opNDate<=opCDate){newerSell=true;break;}
+                if(opNDate>opDate&&opNDate<opCDate){newerSell=true;break;}
               }
               if(!newerSell){isClosed=true;break;}
             }
@@ -2572,6 +2685,7 @@ function _renderAllNow(){
       +'<td style="position:sticky;right:0;background:var(--bg2);border-left:1px solid var(--border)"'+rs+'><div style="display:flex;gap:5px;justify-content:flex-end;padding:2px 4px">'
         +(isWheel?'<button class="act-btn green" onclick="toggleTrades(\''+ticker+'\')">Trades</button>':'')
         +(isWheel?'<button class="act-btn" onclick="fillAdvisor(\''+ticker+'\')">Advisor</button>':'')
+        +(isWheel?'<button class="act-btn" onclick="setCBReset(\''+ticker+'\')" title="Reset adj CB start date — use when reassigned after a gap" style="font-size:9px;opacity:0.7;'+(HOLDINGS[ticker]&&HOLDINGS[ticker].cbResetDate?'color:var(--amber);opacity:1':'')+'">CB Reset</button>':'')
         +'<button class="del-btn" onclick="delHolding(\''+ticker+'\')">&#10005;</button>'
       +'</div></td>'
     +'</tr>';
@@ -2607,14 +2721,16 @@ function _renderAllNow(){
       var bc={assignment:'ba',sold_call:'bc',sold_put:'bp',expired:'be',bought_close:'bb',dividend:'bd'}[t.type]||'bp';
       var detail='';
       if(t.type==='assignment'||t.type==='purchase')detail=t.shares+' sh @ '+fmt(t.strike||t.price||0);
-      else if(t.type==='sold_call'||t.type==='sold_put'){
+      else if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){
         detail=t.contracts+'ct '+fmt(t.strike)+' strike . <span style="color:var(--green)">'+fmt((t.premium||0)*(t.contracts||1)*100)+' credit ('+fmt(t.premium)+'/sh)</span>';
         if(t.expiry)detail+=' . <span style="color:var(--blue);font-size:10px">exp '+t.expiry+'</span>';
       }
       else if(t.type==='expired')detail='Expired worthless ? <span style="color:var(--text3)">(premium counted at sell)</span>';
       else if(t.type==='bought_close')detail='<span style="color:var(--red)">'+fmt((t.premium||0)*(t.contracts||1)*100)+' debit</span>';
       else if(t.type==='dividend')detail='<span style="color:var(--amber)">'+fmt(t.amount)+'</span>';
-      return'<div class="trade-row"><span class="badge '+bc+'">'+lbl+'</span>'
+      var effectiveReset=h.cbResetDate||h._autoResetDate||null;
+      var isPreReset=effectiveReset&&t.date&&t.date<effectiveReset;
+      return'<div class="trade-row" style="'+(isPreReset?'opacity:0.45;border-left:2px solid var(--amber)':'')+'"><span class="badge '+bc+'">'+lbl+'</span>'+(isPreReset?'<span style="font-size:9px;color:var(--amber);margin-right:4px;font-family:DM Mono,monospace">pre-reset</span>':'')
         +'<div style="flex:1;font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text2)">'+detail+(t.notes?' . <span style="color:var(--text3);font-size:10px">'+t.notes+'</span>':'')+'</div>'
         +'<span style="font-size:10px;color:var(--text3);font-family:\'DM Mono\',monospace;margin-right:6px">'+t.date+'</span>'
         +'<button class="del-btn" onclick="delTrade(\''+ticker+'\','+ri+')" title="Delete this trade">x</button></div>';
@@ -2622,7 +2738,7 @@ function _renderAllNow(){
 
     panels+='<div id="tradepanel-'+ticker+'" class="card" style="display:none;margin-top:0;border-top:2px solid rgba(0,200,150,0.3);border-radius:0 0 var(--rl) var(--rl);background:var(--bg3)">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-        +'<div style="font-size:12px;font-weight:700;color:var(--green);font-family:\'DM Mono\',monospace;text-transform:uppercase;letter-spacing:0.05em">'+ticker+' . '+trades.length+' trades . '+fmt(h.netPrem)+' net</div>'
+        +'<div style="font-size:12px;font-weight:700;color:var(--green);font-family:\'DM Mono\',monospace;text-transform:uppercase;letter-spacing:0.05em">'+ticker+' . '+trades.length+' trades . '+fmt(h.netPrem)+' net'+(h.cbResetDate?'<span style="color:var(--amber);font-size:10px;margin-left:8px;font-weight:400">⚙ manual CB reset: '+h.cbResetDate+'</span>':h._autoResetDate?'<span style="color:var(--blue);font-size:10px;margin-left:8px;font-weight:400">⟳ auto CB reset from last assignment: '+h._autoResetDate+' (adj CB counts post-assignment only)</span>':'')+'</div>'
         +'<button class="del-btn" onclick="toggleTrades(\''+ticker+'\')">x close</button>'
       +'</div>'
       +(log||'<p style="font-size:12px;color:var(--text3);font-family:\'DM Mono\',monospace">No trades yet. Use Add Trade tab.</p>')
@@ -2640,6 +2756,7 @@ function _renderAllNow(){
   if($d('tab-dashboard')&&$d('tab-dashboard').classList.contains('active')){
     renderDashboard();
   }
+  renderArchivedBadge();
 }
 
 // Premium panel filter
@@ -2674,7 +2791,59 @@ function toggleTrades(ticker){
 }
 function setPrice(t,v){if(HOLDINGS[t])HOLDINGS[t].currentPrice=parseFloat(v)||0;autoSave();renderAll();}
 function setCB(t,v){var cb=parseFloat(v)||0;if(cb>0&&HOLDINGS[t]){HOLDINGS[t].origCB=cb;HOLDINGS[t].adjCB=cb;autoSave();renderAll();}}
-function delHolding(t){if(confirm('Remove '+t+' and all its trades?')){delete HOLDINGS[t];autoSave();renderAll();}}
+
+function setCBReset(ticker){
+  var h=HOLDINGS[ticker];
+  if(!h)return;
+  var current=h.cbResetDate||'';
+  var msg='Set adj CB reset date for '+ticker+'\n\n'
+    +'Trades BEFORE this date will not count toward adj CB\n'
+    +'(all-time net premium total stays unchanged)\n\n'
+    +'Enter date (YYYY-MM-DD) or leave blank to clear reset:\n'
+    +(current?'Current reset date: '+current:'No reset date set');
+  var val=prompt(msg, current||new Date().toISOString().slice(0,10));
+  if(val===null)return; // cancelled
+  val=val.trim();
+  if(val&&!/^\d{4}-\d{2}-\d{2}$/.test(val)){
+    alert('Invalid date format. Use YYYY-MM-DD (e.g. 2026-04-01)');
+    return;
+  }
+  if(val){
+    h.cbResetDate=val;
+    // Also update origCB to the cost basis of the new position if user wants
+    var newCB=prompt('Optional: enter new orig CB/share for this position (the price you paid when reassigned).\nLeave blank to keep current origCB of $'+fmt(h.origCB)+':', '');
+    if(newCB!==null&&newCB.trim()&&!isNaN(parseFloat(newCB.trim()))){
+      h.origCB=parseFloat(newCB.trim());
+    }
+  } else {
+    delete h.cbResetDate;
+  }
+  autoSave();
+  renderAll();
+  alert(val
+    ?'CB reset date set to '+val+'.\nAdj CB for '+ticker+' now only counts premiums earned on or after this date.'
+    :'CB reset cleared for '+ticker+'. All historical premiums now count toward adj CB.');
+}
+
+function delHolding(t){
+  var hld=HOLDINGS[t]; if(!hld) return;
+  var trades=hld.trades||[];
+  var premIn=0, premOut=0;
+  trades.forEach(function(tr){
+    if(tr.type==='sold_call'||tr.type==='sold_put'||tr.type==='sold_close') premIn+=tr.amount||0;
+    else if(tr.type==='bought_close') premOut+=tr.amount||0;
+  });
+  var net=Math.round(premIn-premOut);
+  if(net!==0||trades.length>0){
+    if(!confirm('Archive '+t+'?\n\nOK = Archive (hides from UI, keeps $'+net.toLocaleString()+' premium on dashboard)\nCancel = Do nothing')) return;
+    HOLDINGS[t].archived=true;
+    HOLDINGS[t].shares=0;
+  } else {
+    if(!confirm('Remove '+t+' (no premium history)?')) return;
+    delete HOLDINGS[t];
+  }
+  autoSave(); renderAll(); renderArchivedBadge();
+}
 function delTrade(ticker,idx){
   if(!HOLDINGS[ticker])return;
   var t=HOLDINGS[ticker].trades[idx];if(!t)return;
@@ -2739,7 +2908,7 @@ function renderTradeLog(tickers){
     var lbl=typeLabels[t.type]||t.type.toUpperCase();
     var bc=typeCls[t.type]||'bp';
     var detail='';
-    if(t.type==='sold_call'||t.type==='sold_put'){
+    if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){
       detail=t.contracts+'ct '+fmt(t.strike)+' strike . <span style="color:var(--green)">'+fmt((t.premium||0)*(t.contracts||1)*100)+'</span>';
       if(t.expiry)detail+=' . <span style="color:var(--blue);font-size:10px">exp '+t.expiry+'</span>';
     } else if(t.type==='bought_close'){
@@ -3207,58 +3376,89 @@ function smartParseFid(text,filename){
 
 function applyPositions(positions,filename){
   var acctId=($d('up-account')&&$d('up-account').value)||'';
-  var added=0,updated=0;
+  var added=0,updated=0,removed=0;
   var preview=[];
+
+  // Build set of tickers present in this Positions CSV
+  var csvTickers={};
+  positions.forEach(function(p){ if(p.ticker) csvTickers[p.ticker]=true; });
+
+  // STEP 1: Zero out shares for holdings in this account NOT in the Positions CSV
+  // Only zero holdings that are strictly tagged to this account.
+  // Trade history is always preserved.
+  if(acctId){
+    Object.keys(HOLDINGS).forEach(function(k){
+      var h=HOLDINGS[k];
+      // STRICT: only touch holdings explicitly tagged to this account
+      if(h.account!==acctId) return;
+      var tk=h.ticker||k.split('_')[0];
+      if(csvTickers[tk]) return; // still in positions — keep shares
+      if(h.shares>0){
+        h.shares=0;
+        removed++;
+        preview.push('\u2715 '+tk+': shares zeroed (not in positions)');
+      }
+    });
+  }
+
+  // STEP 2: Update or create holdings from the Positions CSV
   positions.forEach(function(p){
     if(!p.ticker)return;
 
-    // Find the best matching key for this ticker in the selected account
-    // Priority: 1) exact match with same account, 2) scoped key with same account, 3) plain key
+    // STRICT account matching: only touch holdings that belong to THIS account
+    // Never bleed shares from one account into another account's holding
     var key=null;
-
-    // Search all holdings for matching ticker + account
-    var matchingKeys=Object.keys(HOLDINGS).filter(function(k){
-      var h=HOLDINGS[k];
-      return (h.ticker||k.split('_')[0])===p.ticker && (!acctId||h.account===acctId);
-    });
-
-    if(matchingKeys.length>0){
-      // Use the one with most trades (most data)
-      matchingKeys.sort(function(a,b){
-        return (HOLDINGS[b].trades||[]).length-(HOLDINGS[a].trades||[]).length;
+    if(acctId){
+      // Look for exact ticker+account match only
+      var exactKeys=Object.keys(HOLDINGS).filter(function(k){
+        var h=HOLDINGS[k];
+        return (h.ticker||k.split('_')[0])===p.ticker && h.account===acctId;
       });
-      key=matchingKeys[0];
-    } else {
-      // No match for this account - create new entry
-      // Use scoped key if plain key exists for another account
-      if(HOLDINGS[p.ticker]&&HOLDINGS[p.ticker].account!==acctId){
-        key=p.ticker+'_'+(acctId?acctId.replace('acct_',''):Date.now());
+      if(exactKeys.length>0){
+        exactKeys.sort(function(a,b){return (HOLDINGS[b].trades||[]).length-(HOLDINGS[a].trades||[]).length;});
+        key=exactKeys[0];
       } else {
-        key=p.ticker;
+        // No holding for this ticker in this account yet - create scoped key
+        // Use plain key only if it's completely unclaimed (no account set)
+        var plainKey=p.ticker;
+        if(HOLDINGS[plainKey] && !HOLDINGS[plainKey].account){
+          // Unclaimed plain key - assign to this account
+          key=plainKey;
+        } else {
+          // Already claimed by another account - create scoped key
+          key=p.ticker+'_'+acctId;
+        }
       }
+    } else {
+      key=HOLDINGS[p.ticker]?p.ticker:(p.ticker);
     }
 
     var existing=HOLDINGS[key];
     if(existing){
-      if(p.shares)existing.shares=p.shares;
-      if(p.currentPrice)existing.currentPrice=p.currentPrice;
-      // Always update origCB from positions file - it is the authoritative source
+      // Positions CSV only owns: shares, currentPrice, origCB — never trades
+      if(p.shares!=null) existing.shares=p.shares;
+      if(p.currentPrice>0) existing.currentPrice=p.currentPrice;
       if(p.origCB>0) existing.origCB=p.origCB;
-      if(!existing.name&&p.name)existing.name=p.name;
-      if(acctId)existing.account=acctId;
+      if(!existing.name&&p.name) existing.name=p.name;
+      if(acctId) existing.account=acctId;
       updated++;
-      preview.push('? '+p.ticker+': '+p.shares+'sh @ $'+p.origCB);
+      preview.push('\u21bb '+p.ticker+': '+p.shares+'sh @ $'+p.origCB);
     } else {
       HOLDINGS[key]={name:p.name||p.ticker,ticker:p.ticker,shares:p.shares||0,
         origCB:p.origCB||0,currentPrice:p.currentPrice||0,
         type:p.type||'stock',trades:[],account:acctId||''};
       added++;
-      preview.push('+ '+p.ticker+': '+p.shares+'sh . $'+p.origCB+'/sh');
+      preview.push('+ '+p.ticker+': '+p.shares+'sh @ $'+p.origCB+'/sh');
     }
   });
+
   autoSave();renderAll();
-  var msg='[OK] '+added+' added . '+updated+' updated'+(preview.length?' . '+preview.slice(0,6).join(', '):'');
-  setSt('pos-st',msg,'sok');
+  var parts=['[OK] Positions synced'];
+  if(added) parts.push(added+' added');
+  if(updated) parts.push(updated+' updated');
+  if(removed) parts.push(removed+' zeroed (sold/removed)');
+  parts.push('Trade history untouched');
+  setSt('pos-st',parts.join(' · ')+(preview.length?'\n'+preview.slice(0,10).join('\n'):''),'sok');
 }
 
 function onPickPos(e){var f=e.target.files[0];if(f)readPos(f);e.target.value='';}
@@ -3522,6 +3722,18 @@ function advPopulateTickers(){
     if(h.type!=='wheel') return false;
     if(!(h.trades&&h.trades.length)) return false;
     if(acctFilter&&h.account!==acctFilter) return false;
+    // Hide archived holdings that have no open positions and no shares
+    if(h.archived&&h.shares===0){
+      // Check if has any open positions (unexpired sells)
+      var now=new Date(); now.setHours(0,0,0,0);
+      var hasOpen=(h.trades||[]).some(function(t){
+        if(t.type!=='sold_put'&&t.type!=='sold_call') return false;
+        if(!t.expiry) return false;
+        var exp=new Date(t.expiry+'T12:00:00');
+        return exp>=now;
+      });
+      if(!hasOpen) return false; // hide archived with no open positions
+    }
     return true;
   }).sort();
   wheels.forEach(function(k){
@@ -3981,7 +4193,7 @@ function buildPortfolioContext(){
     if(h.trades&&h.trades.length){
       lines.push('  Trades ('+h.trades.length+'):');
       h.trades.slice(-5).forEach(function(t){
-        if(t.type==='sold_call'||t.type==='sold_put')lines.push('    '+t.date+' '+t.type.replace('_',' ')+' '+t.contracts+'ct $'+t.strike+' strike . $'+t.premium+'/sh premium');
+        if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close')lines.push('    '+t.date+' '+t.type.replace('_',' ')+' '+t.contracts+'ct $'+t.strike+' strike . $'+t.premium+'/sh premium');
         else if(t.type==='expired')lines.push('    '+t.date+' EXPIRED $'+t.strike+' strike . kept $'+((t.premium||0)*t.contracts*100));
         else if(t.type==='bought_close')lines.push('    '+t.date+' BUY TO CLOSE $'+t.premium+'/sh');
       });
@@ -4163,6 +4375,7 @@ function goTab(name,btn){
   if(name==='stockanalysis'){populateSaTicker();}
   if(name==='tax'){renderTaxPlanner();}
   if(name==='upload'){renderAcctNumbers();renderDeleteWrongTrades();populateDeleteAcctSel();}
+  if(name==='report'){setTimeout(function(){renderIncomeReport();},50);}
 }
 
 // -- Account Number Auto-detect --
@@ -4272,7 +4485,7 @@ function renderDeleteWrongTrades(){
     var premIn=0,premOut=0;
     trades.forEach(function(t){
       var val=t.amount>0?t.amount:((t.premium||0)*(t.contracts||1)*100);
-      if(t.type==='sold_call'||t.type==='sold_put')premIn+=val;
+      if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close')premIn+=val;
       else if(t.type==='bought_close')premOut+=val;
     });
     var net=premIn-premOut;
@@ -4394,7 +4607,7 @@ backfillExpiriesFromNotes();
   try{savedTab=localStorage.getItem('oi_active_tab')||'dashboard';}catch(e){}
   var tabEl=$d('tab-'+savedTab);
   if(!tabEl)savedTab='dashboard';
-  var tabMap={dashboard:'Dashboard',news:'News',holdings:'Holdings',advisor:'Strike Advisor',roll:'Roll Advisor',income:'Income Planner',cycles:'Wheel Cycles',sizing:'Position Sizing',benchmark:'Benchmark',quality:'Strike Quality',stockanalysis:'Stock Analysis',tax:'Tax Planner',upload:'Upload Fidelity',addstock:'Add Stock',addtrade:'Add Trade'};
+  var tabMap={dashboard:'Dashboard',news:'News',holdings:'Holdings',advisor:'Strike Advisor',roll:'Roll Advisor',income:'Income Planner',cycles:'Wheel Cycles',sizing:'Position Sizing',benchmark:'Benchmark',quality:'Strike Quality',stockanalysis:'Stock Analysis',tax:'Tax Planner',report:'Income Report',upload:'Upload Fidelity',addstock:'Add Stock',addtrade:'Add Trade'};
   var label=tabMap[savedTab]||'';
   var btns=document.querySelectorAll('.nb');
   var matchBtn=null;
@@ -4902,7 +5115,7 @@ function calcIncome(){
     (h.trades||[]).forEach(function(t){
       if(!t.date||new Date(t.date)<cutoff)return;
       var amt=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
-      if(t.type==='sold_call'||t.type==='sold_put')entry.net+=amt;
+      if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close')entry.net+=amt;
       if(t.type==='bought_close')entry.net-=amt;
     });
   });
@@ -5195,146 +5408,315 @@ function fetchSPReturn(){
     return (sp&&ep)?{sp:sp,ep:ep}:null;
   }
 
-  // Primary: Yahoo Finance v8 chart (monthly interval, works without CORS issues via local server)
-  var url1='/spychart?period1='+startTs+'&period2='+endTs;
-  fetch(url1)
-    .then(function(r){if(!r.ok)throw 0;return r.json();})
-    .then(function(d){
-      var p=parseChart(d); if(!p)throw 0;
-      applyResult(p.sp,p.ep);
-    })
-    .catch(function(){
-      // Fallback 1: Yahoo Finance v8 directly (works if CORS allows)
-      var url2='https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1='+startTs+'&period2='+endTs+'&interval=1mo&includeAdjustedClose=true';
-      fetch(url2)
+  function parseQuote(d){
+    // Parse Yahoo v7 quote response for SPY current price
+    var quotes=d&&d.quoteResponse&&d.quoteResponse.result;
+    return quotes&&quotes[0]&&quotes[0].regularMarketPrice;
+  }
+
+  // Known SPY adj close prices for common start dates
+  var knownStartPrices={
+    '2020-01-01':321,'2020-01-02':321,
+    '2021-01-01':373,'2021-01-02':373,
+    '2022-01-01':477,'2022-01-02':477,
+    '2023-01-01':382,'2023-01-02':382,
+    '2024-01-01':472,'2024-01-02':472,'2024-01-03':471,
+    '2024-06-01':530,'2024-06-03':530,
+    '2024-07-01':546,'2024-07-02':546,
+    '2025-01-01':585,'2025-01-02':585,'2025-01-03':583,
+    '2025-04-01':555,'2025-04-02':536,
+    '2025-07-01':580
+  };
+
+  // Use same CORS proxy chain that live prices use
+  var spyChartUrl='https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1='+startTs+'&period2='+endTs+'&interval=1mo&includeAdjustedClose=true';
+  var spyQuoteUrl='https://query1.finance.yahoo.com/v7/finance/quote?symbols=SPY&fields=regularMarketPrice,regularMarketPreviousClose';
+
+  var attempts=[
+    function(){return fetch('/spychart?period1='+startTs+'&period2='+endTs).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){var p=parseChart(d);if(!p)throw 0;return p;});},
+    function(){return fetch('https://corsproxy.io/?'+encodeURIComponent(spyChartUrl)).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){var p=parseChart(d);if(!p)throw 0;return p;});},
+    function(){return fetch('https://api.allorigins.win/get?url='+encodeURIComponent(spyChartUrl)).then(function(r){return r.json();}).then(function(d){var p=parseChart(JSON.parse(d.contents));if(!p)throw 0;return p;});},
+    function(){
+      // Fallback: get current SPY price + use known start price
+      return fetch('https://corsproxy.io/?'+encodeURIComponent(spyQuoteUrl))
+        .then(function(r){if(!r.ok)throw 0;return r.json();})
+        .then(function(d){
+          var ep=parseQuote(d); if(!ep)throw 0;
+          var sp=knownStartPrices[startDate];
+          if(!sp)throw new Error('no known start price');
+          return {sp:sp,ep:ep};
+        });
+    },
+    function(){
+      // Final fallback: allorigins for quote + known start price
+      return fetch('https://api.allorigins.win/get?url='+encodeURIComponent(spyQuoteUrl))
         .then(function(r){return r.json();})
         .then(function(d){
-          var p=parseChart(d); if(!p)throw 0;
-          applyResult(p.sp,p.ep);
-        })
-        .catch(function(){
-          // Fallback 2: query2 Yahoo
-          var url3='https://query2.finance.yahoo.com/v8/finance/chart/SPY?period1='+startTs+'&period2='+endTs+'&interval=1mo&includeAdjustedClose=true';
-          fetch(url3)
-            .then(function(r){return r.json();})
-            .then(function(d){
-              var p=parseChart(d); if(!p)throw 0;
-              applyResult(p.sp,p.ep);
-            })
-            .catch(function(){
-              // Final fallback: use /quotes proxy for current SPY price, estimate from known start prices
-              fetch('/quotes?symbols=SPY')
-                .then(function(r){return r.json();})
-                .then(function(d){
-                  var quotes=d&&d.quoteResponse&&d.quoteResponse.result;
-                  var q=quotes&&quotes[0];
-                  if(!q||!q.regularMarketPrice)throw 0;
-                  var ep=q.regularMarketPrice;
-                  // Known SPY prices for common start dates (approximate adj close)
-                  var knownPrices={'2024-01-01':472,'2024-01-02':472,'2025-01-01':585,'2025-01-02':585,'2023-01-01':382};
-                  var sp=knownPrices[startDate];
-                  if(!sp){onFail('Auto-fetch failed - enter % manually');return;}
-                  applyResult(sp,ep);
-                })
-                .catch(function(){onFail('Auto-fetch failed - enter % manually');});
-            });
+          var ep=parseQuote(JSON.parse(d.contents)); if(!ep)throw 0;
+          var sp=knownStartPrices[startDate];
+          if(!sp)throw new Error('no known start price');
+          return {sp:sp,ep:ep};
         });
-    });
+    }
+  ];
+
+  attempts.reduce(function(chain,fn){
+    return chain.catch(function(){return fn();});
+  },Promise.reject(new Error('start')))
+  .then(function(p){applyResult(p.sp,p.ep);})
+  .catch(function(){onFail('Auto-fetch failed - enter % manually');});
+}
+
+function showBenchTab(name,btn){
+  document.querySelectorAll('.bench-panel').forEach(function(p){p.style.display='none';});
+  document.querySelectorAll('#tab-benchmark .nb').forEach(function(b){b.classList.remove('active');});
+  var el=$d('bench-'+name); if(el) el.style.display='block';
+  if(btn) btn.classList.add('active');
 }
 
 function calcBenchmark(){
-  var startDate=$d('bench-start').value; var spReturn=(parseFloat($d('bench-sp').value)||24.5)/100;
-  var res=$d('benchmark-result');
+  var startDate=$d('bench-start').value;
+  var spReturn=(parseFloat($d('bench-sp').value)||24.5)/100;
   var startDt=new Date(startDate); var now=new Date();
   var years=r2((now-startDt)/(365.25*24*60*60*1000));
-  if(years<=0){res.innerHTML='<span style="color:var(--amber)">Set a valid start date.</span>';return;}
-  var totalCB=0,totalMkt=0,premSince=0;
+  if(years<=0){
+    $d('bench-portfolio').innerHTML='<span style="color:var(--amber)">Set a valid start date.</span>';
+    return;
+  }
+  var spAnn=r2((Math.pow(1+spReturn,1/years)-1)*100);
+
+  // ── collect per-account and per-ticker data ──────────────────────────────
+  var acctMap={}; // acct_id -> {label,grossIn,buybacks,netPrem,cb,cbOptions,tickers:{}}
+  var tickerMap={}; // ticker -> {grossIn,buybacks,netPrem,sold,expired,boughtClose}
+  var totalCB=0,totalMkt=0,grossAll=0,buybackAll=0;
+
+  // build account labels
+  var acctLabels={};
+  Object.keys(ACCOUNTS||{}).forEach(function(id){acctLabels[id]=(ACCOUNTS[id].label||ACCOUNTS[id].name||id);});
+
   Object.keys(HOLDINGS).forEach(function(k){
     var h=calcHolding(k); if(!h)return;
-    if(h.origCB>0&&h.totalShares>0) totalCB+=h.totalShares*h.origCB;
-    if(h.currentPrice>0) totalMkt+=h.totalShares*h.currentPrice;
-    (HOLDINGS[k].trades||[]).forEach(function(t){
+    var hd=HOLDINGS[k];
+    var acct=hd.account||'';
+    var ticker=hd.ticker||k;
+    var shares=h.totalShares||0;
+    var origCB=hd.origCB||0;
+    var cb=shares*origCB;
+    var mkt=(hd.currentPrice||0)*shares;
+    totalCB+=cb; totalMkt+=mkt;
+
+    var hasOptions=false;
+    var gIn=0,bOut=0;
+    (hd.trades||[]).forEach(function(t){
       if(!t.date||new Date(t.date)<startDt)return;
       var amt=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
-      if(t.type==='sold_call'||t.type==='sold_put') premSince+=amt;
-      if(t.type==='bought_close') premSince-=amt;
+      if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){gIn+=amt;hasOptions=true;}
+      if(t.type==='bought_close'){bOut+=amt;hasOptions=true;}
     });
+    var net=r2(gIn-bOut);
+    grossAll+=gIn; buybackAll+=bOut;
+
+    // per account
+    if(!acctMap[acct]) acctMap[acct]={label:acctLabels[acct]||acct,grossIn:0,buybacks:0,netPrem:0,cb:0,cbOptions:0,
+      expired:0,boughtClose:0,sold:0,tickers:[]};
+    var am=acctMap[acct];
+    am.grossIn+=gIn; am.buybacks+=bOut; am.netPrem+=net; am.cb+=cb;
+    if(hasOptions) am.cbOptions+=cb;
+
+    (hd.trades||[]).forEach(function(t){
+      if(!t.date||new Date(t.date)<startDt)return;
+      if(t.type==='sold_call'||t.type==='sold_put') am.sold++;
+      if(t.type==='expired') am.expired++;
+      if(t.type==='bought_close') am.boughtClose++;
+    });
+    if(gIn>0||bOut>0) am.tickers.push({ticker:ticker,grossIn:r2(gIn),buybacks:r2(bOut),net:r2(net),cb:r2(cb)});
+
+    // per ticker (only if options)
+    if(hasOptions){
+      if(!tickerMap[ticker]) tickerMap[ticker]={grossIn:0,buybacks:0,net:0,sold:0,expired:0,boughtClose:0};
+      var tm=tickerMap[ticker];
+      tm.grossIn+=gIn; tm.buybacks+=bOut; tm.net+=net;
+      (hd.trades||[]).forEach(function(t){
+        if(!t.date||new Date(t.date)<startDt)return;
+        if(t.type==='sold_call'||t.type==='sold_put') tm.sold++;
+        if(t.type==='expired') tm.expired++;
+        if(t.type==='bought_close') tm.boughtClose++;
+      });
+    }
   });
-  var unreal=r2(totalMkt-totalCB); var totalRet=r2(unreal+premSince);
-  var totalPct=totalCB>0?r2(totalRet/totalCB*100):0; var premYield=totalCB>0?r2(premSince/totalCB*100):0;
-  var mktYield=totalCB>0?r2(unreal/totalCB*100):0; var annTotal=r2(totalPct/years);
-  var annPrem=r2(premYield/years); var spAnn=r2((Math.pow(1+spReturn,1/years)-1)*100);
-  var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:18px">';
-  [['Total Return ($)',fmtS(totalRet),totalRet>=0?'var(--green)':'var(--red)','unrealized + premium since '+startDate],['Total Return (%)',totalPct+'%',totalPct>=0?'var(--green)':'var(--red)','on cost basis'],['Wheel Annualized',annTotal+'%/yr',annTotal>spAnn?'var(--green)':'var(--amber)','your wheel strategy'],['S&P 500 Annualized',spAnn+'%/yr','var(--blue)','benchmark'],['Premium Yield',premYield+'%','var(--green)','options income / cost basis'],['Annualized Premium',annPrem+'%/yr','var(--green)','options yield per year'],['Market Gain %',mktYield+'%',mktYield>=0?'var(--green)':'var(--red)','stock appreciation'],['Years Tracked',years+'yrs','var(--text2)','from '+startDate]].forEach(function(c){html+='<div style="background:var(--bg3);border-radius:var(--r);padding:10px 14px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">'+c[0]+'</div><div style="font-size:18px;font-weight:800;color:'+c[2]+';font-family:\'DM Mono\',monospace">'+c[1]+'</div><div style="font-size:10px;color:var(--text3);margin-top:2px">'+c[3]+'</div></div>';});
+
+  var netAll=r2(grossAll-buybackAll);
+  var unreal=r2(totalMkt-totalCB);
+  var grossYield=totalCB>0?r2(grossAll/totalCB*100):0;
+  var netROI=totalCB>0?r2(netAll/totalCB*100):0;
+  var netDelta=r2(netROI-spReturn*100);
+  var buybackDragPct=grossAll>0?r2(buybackAll/grossAll*100):0;
+  var mktYield=totalCB>0?r2(unreal/totalCB*100):0;
+  var totalRet=r2(unreal+netAll);
+  var totalPct=totalCB>0?r2(totalRet/totalCB*100):0;
+  var annTotal=r2(totalPct/years);
+
+  // ── PORTFOLIO TAB ────────────────────────────────────────────────────────
+  var beating=annTotal>spAnn;
+  var html='';
+
+  // metric cards
+  html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px">';
+  function mc(lbl,val,col,sub){return '<div style="background:var(--bg3);border-radius:var(--r);padding:10px 14px;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">'+lbl+'</div><div style="font-size:18px;font-weight:800;color:'+col+';font-family:\'DM Mono\',monospace">'+val+'</div><div style="font-size:10px;color:var(--text3);margin-top:2px">'+sub+'</div></div>';}
+  html+=mc('Gross premium',fmt(grossAll),'var(--amber)','before buybacks');
+  html+=mc('Buybacks paid',fmt(buybackAll),'var(--red)','−'+buybackDragPct+'% of gross');
+  html+=mc('Net premium',fmt(netAll),'var(--green)','gross − buybacks');
+  html+=mc('Net premium ROI',netROI+'%','var(--green)','net ÷ total cost basis');
+  html+=mc('Gross yield',grossYield+'%','var(--amber)','overstates by '+buybackDragPct+'%');
+  html+=mc('SPY total return',(spReturn*100).toFixed(2)+'%','var(--blue)','buy & hold benchmark');
+  html+=mc('Net vs SPY',(netDelta>=0?'+':'')+netDelta+'%',netDelta>=0?'var(--green)':'var(--red)','honest delta');
+  html+=mc('Market gain',fmt(unreal),unreal>=0?'var(--green)':'var(--red)','unrealized appreciation');
   html+='</div>';
-  var beating=annTotal>spAnn; var margin=r2(Math.abs(annTotal-spAnn));
+
+  // comparison bars
+  var maxBar=Math.max(grossYield,spReturn*100,netROI,buybackDragPct,1);
+  function bar(label,val,bg,col){
+    var w=Math.max(4,Math.round(val/maxBar*100));
+    return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
+      +'<div style="width:160px;font-size:11px;color:var(--text2);font-family:DM Mono,monospace;flex-shrink:0">'+label+'</div>'
+      +'<div style="flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:22px;position:relative">'
+      +'<div style="width:'+w+'%;background:'+bg+';height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px">'
+      +'<span style="font-size:11px;font-weight:700;color:'+col+';font-family:DM Mono,monospace;white-space:nowrap">'+val+'%</span>'
+      +'</div></div></div>';
+  }
+  html+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:14px">';
+  html+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:12px">Return comparison (total cost basis denominator)</div>';
+  html+=bar('SPY buy & hold',r2(spReturn*100),'rgba(77,166,255,0.4)','var(--blue)');
+  html+=bar('Wheel gross yield',grossYield,'rgba(245,166,35,0.4)','var(--amber)');
+  html+=bar('Wheel NET ROI',netROI,'rgba(0,200,150,0.5)','var(--green)');
+  html+=bar('Buyback drag',buybackDragPct,'rgba(255,92,92,0.4)','var(--red)');
+  html+='</div>';
+
+  // verdict
   html+='<div style="background:'+(beating?'rgba(0,200,150,0.08)':'rgba(255,180,0,0.08)')+';border:1px solid '+(beating?'rgba(0,200,150,0.3)':'rgba(255,180,0,0.3)')+';border-radius:var(--r);padding:14px 18px;margin-bottom:14px">'
-    +'<div style="font-size:14px;font-weight:800;color:'+(beating?'var(--green)':'var(--amber)')+';margin-bottom:6px">'+(beating?'[OK] Wheel strategy BEATING S&P 500':'[!]? Wheel strategy TRAILING S&P 500')+'</div>'
-    +'<div style="font-size:12px;color:var(--text2)">Wheel: <strong style="color:'+(beating?'var(--green)':'var(--red)')+'">'+annTotal+'%/yr</strong> vs S&P: <strong style="color:var(--blue)">'+spAnn+'%/yr</strong> - <strong>'+(beating?'outperforming':'underperforming')+' by '+margin+'%/yr</strong></div>'
-    +'<div style="font-size:11px;color:var(--text3);margin-top:6px">Premium yield of '+annPrem+'%/yr - '+(annPrem>6?'strong options income, above typical covered call benchmarks.':'keep building adj CB reduction to improve this.')+'</div></div>';
-  var totalAbs=Math.abs(unreal)+premSince;
-  if(totalAbs>0){var pp=Math.max(0,Math.round(premSince/totalAbs*100));var mp=100-pp;
-    html+='<div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">Return Breakdown</div>'
+    +'<div style="font-size:14px;font-weight:800;color:'+(beating?'var(--green)':'var(--amber)')+';margin-bottom:8px">'+(beating?'✓ Wheel NET ROI beating S&P':'⚠ Wheel NET ROI near S&P — buybacks are the gap')+'</div>'
+    +'<div style="font-size:12px;color:var(--text2);font-family:DM Mono,monospace;line-height:1.8">'
+    +'Net ROI: <strong style="color:var(--green)">'+netROI+'%</strong> vs SPY: <strong style="color:var(--blue)">'+(spReturn*100).toFixed(2)+'%</strong> → delta <strong style="color:'+(netDelta>=0?'var(--green)':'var(--red)')+'">'+(netDelta>=0?'+':'')+netDelta+'%</strong><br>'
+    +'Gross yield was <strong style="color:var(--amber)">'+grossYield+'%</strong> but <strong style="color:var(--red)">'+buybackDragPct+'%</strong> of every dollar collected went back to close positions early.<br>'
+    +'<span style="color:var(--text3);font-size:11px">Pre-tax comparison only. Wheel income taxed as ordinary income; SPY gains qualify for LTCG rates. After-tax gap favors buy & hold in taxable accounts.</span>'
+    +'</div></div>';
+
+  // return breakdown bar
+  var totalAbs=Math.abs(unreal)+netAll;
+  if(totalAbs>0){
+    var pp=Math.max(0,Math.round(netAll/totalAbs*100)); var mp=100-pp;
+    html+='<div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;font-family:DM Mono,monospace">Total return breakdown</div>'
       +'<div style="height:28px;border-radius:6px;overflow:hidden;display:flex;margin-bottom:6px">'
-      +'<div style="width:'+pp+'%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000">'+(pp>12?'Premium '+pp+'%':'')+'</div>'
-      +'<div style="width:'+mp+'%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000">'+(mp>12?'Market '+mp+'%':'')+'</div></div>'
-      +'<div style="display:flex;gap:16px;font-size:11px;color:var(--text3)"><span>? Premium: '+fmt(premSince)+' ('+pp+'%)</span><span>? Market gain: '+fmt(unreal)+' ('+mp+'%)</span></div>';}
-  // -- Contextual explanation panel --
-  var bullMarket=spAnn>15;
-  var bearMarket=spAnn<0;
-  var strongPrem=annPrem>6;
-  var trailingByMuch=!beating&&margin>8;
-  var trailingByLittle=!beating&&margin<=5;
-  var premPct=totalAbs>0?Math.max(0,Math.round(premSince/totalAbs*100)):0;
-
-  html+='<div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-top:16px">';
-  html+='<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);font-family:DM Mono,monospace;margin-bottom:12px">? How to read this result</div>';
-  html+='<div style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--text2);font-family:DM Mono,monospace;line-height:1.75">';
-
-  // Insight 1 - bull/bear market context
-  if(bullMarket){
-    html+='<div><span style="color:var(--amber);font-weight:700">Bull market context: </span>The S&P returned '+spAnn+'%/yr over this period - an unusually strong run. '
-      +'The wheel strategy tends to underperform in strong bull markets because covered calls cap your upside when stocks rip higher. '
-      +'This is the expected trade-off, not a failure.</div>';
-  } else if(bearMarket){
-    html+='<div><span style="color:var(--green);font-weight:700">Bear market context: </span>The S&P was negative over this period. '
-      +'Premium income protected your portfolio and generated real income while buy-and-hold investors lost money. '
-      +'This is exactly what the wheel is designed for.</div>';
-  } else {
-    html+='<div><span style="color:var(--blue);font-weight:700">Neutral market: </span>The S&P returned a moderate '+spAnn+'%/yr. '
-      +'This is the zone where the wheel tends to be most competitive - premium income adds meaningfully on top of market gains.</div>';
+      +'<div style="width:'+pp+'%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000">'+(pp>14?'Net Prem '+pp+'%':'')+'</div>'
+      +'<div style="width:'+mp+'%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000">'+(mp>14?'Market '+mp+'%':'')+'</div></div>'
+      +'<div style="display:flex;gap:16px;font-size:11px;color:var(--text3);font-family:DM Mono,monospace">'
+      +'<span>■ Net premium: '+fmt(netAll)+' ('+pp+'%)</span>'
+      +'<span>■ Market gain: '+fmt(unreal)+' ('+mp+'%)</span></div>';
   }
 
-  // Insight 2 - premium income is real income
-  html+='<div><span style="color:var(--green);font-weight:700">Your premium is real income: </span>'
-    +premPct+'% of your total return ($'+Math.round(premSince).toLocaleString()+') came from options premium - '
-    +'cash you collected regardless of where the market went. '
-    +'A pure S&P investor earned zero premium income. That '+(annPrem)+'%/yr premium yield is yours to keep even in a flat or down year.</div>';
+  $d('bench-portfolio').innerHTML=html;
 
-  // Insight 3 - beating context
-  if(beating){
-    html+='<div><span style="color:var(--green);font-weight:700">You are beating the market: </span>'
-      +'Your wheel returned '+annTotal+'%/yr vs the S&P '+spAnn+'%/yr - outperforming by '+margin+'%/yr. '
-      +'Combined with the premium income cushion, you have both better returns and lower effective cost basis.</div>';
-  } else if(trailingByLittle){
-    html+='<div><span style="color:var(--amber);font-weight:700">Essentially tied: </span>'
-      +'A '+margin+'%/yr gap is within noise over this timeframe - market conditions, timing of trades, and volatility all affect this. '
-      +'But unlike an index fund, your '+annPrem+'%/yr premium yield means you are getting paid to wait, and your adj cost basis keeps dropping.</div>';
-  } else if(trailingByMuch){
-    html+='<div><span style="color:var(--amber);font-weight:700">Trailing in a bull run: </span>'
-      +'A '+margin+'%/yr gap in a '+spAnn+'%/yr S&P environment is expected - covered calls cap upside in ripping markets. '
-      +'Run this again using a start date during a flat or down period and you will see the comparison reverse sharply.</div>';
+  // ── BY ACCOUNT TAB ───────────────────────────────────────────────────────
+  var ahtml='';
+  var acctIds=Object.keys(acctMap);
+  if(!acctIds.length){ahtml='<span style="color:var(--text3)">No account data found.</span>';}
+  else{
+    // summary row
+    ahtml+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:16px">';
+    acctIds.forEach(function(id){
+      var a=acctMap[id];
+      var aNet=r2(a.grossIn-a.buybacks);
+      var aRoiTotal=a.cb>0?r2(aNet/a.cb*100):null;
+      var aRoiOptions=a.cbOptions>0?r2(aNet/a.cbOptions*100):null;
+      var closedA=a.expired+a.boughtClose;
+      var winRate=closedA>0?r2(a.expired/closedA*100):null;
+      var aBuybackPct=a.grossIn>0?r2(a.buybacks/a.grossIn*100):0;
+      ahtml+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden">'
+        +'<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">'
+        +'<span style="font-size:13px;font-weight:700">'+a.label+'</span>'
+        +(aRoiTotal!==null?'<span style="font-size:16px;font-weight:800;color:var(--green);font-family:DM Mono,monospace">'+aRoiTotal+'%</span>':'')
+        +'</div>'
+        +'<div style="padding:10px 14px;font-size:11px;font-family:DM Mono,monospace">'
+        +'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Gross premium</span><span>'+fmt(a.grossIn)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Buybacks</span><span style="color:var(--red)">−'+fmt(a.buybacks)+' ('+aBuybackPct+'%)</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Net premium</span><span style="color:var(--green)">'+fmt(aNet)+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">ROI on options CB</span><span style="color:var(--green)">'+(aRoiOptions!==null?aRoiOptions+'%':'—')+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">ROI on total CB</span><span>'+(aRoiTotal!==null?aRoiTotal+'%':'—')+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Win rate</span><span style="color:var(--green)">'+(winRate!==null?winRate+'%':'—')+'</span></div>'
+        +'<div style="display:flex;justify-content:space-between;padding:3px 0"><span style="color:var(--text3)">Sold / Expired</span><span>'+a.sold+' / '+a.expired+'</span></div>'
+        +'</div>';
+      // holdings mini-table
+      if(a.tickers.length){
+        ahtml+='<table style="width:100%;border-collapse:collapse;font-size:10px;font-family:DM Mono,monospace">'
+          +'<tr style="background:var(--bg3)"><th style="text-align:left;padding:5px 10px;color:var(--text3);font-weight:600">Ticker</th>'
+          +'<th style="text-align:right;padding:5px 10px;color:var(--text3);font-weight:600">Gross</th>'
+          +'<th style="text-align:right;padding:5px 10px;color:var(--text3);font-weight:600">Buyback</th>'
+          +'<th style="text-align:right;padding:5px 10px;color:var(--text3);font-weight:600">Net</th>'
+          +'<th style="text-align:right;padding:5px 10px;color:var(--text3);font-weight:600">ROI</th></tr>';
+        a.tickers.sort(function(x,y){return y.net-x.net;}).forEach(function(t){
+          var tRoi=t.cb>0?r2(t.net/t.cb*100):null;
+          ahtml+='<tr style="border-top:1px solid var(--border)">'
+            +'<td style="padding:5px 10px;font-weight:700">'+t.ticker+'</td>'
+            +'<td style="text-align:right;padding:5px 10px">'+fmt(t.grossIn)+'</td>'
+            +'<td style="text-align:right;padding:5px 10px;color:var(--red)">−'+fmt(t.buybacks)+'</td>'
+            +'<td style="text-align:right;padding:5px 10px;color:'+(t.net<0?'var(--red)':'var(--green)')+'">'+fmt(t.net)+'</td>'
+            +'<td style="text-align:right;padding:5px 10px;color:var(--text3)">'+(tRoi!==null?tRoi+'%':'—')+'</td></tr>';
+        });
+        ahtml+='</table>';
+      }
+      ahtml+='</div>';
+    });
+    ahtml+='</div>';
   }
+  $d('bench-byaccount').innerHTML=ahtml;
 
-  // Insight 4 - full cycle advice
-  html+='<div><span style="color:var(--text);font-weight:700">Full cycle view: </span>'
-    +'The wheel outperforms over a complete market cycle (bull + flat + bear). '
-    +'Try changing the start date to see how results shift across different market regimes. '
-    +'The longer you run it, the more the premium income compounds your cost basis reduction.</div>';
-
-  html+='</div></div>';
-
-  res.innerHTML=html;
+  // ── BY TICKER TAB ────────────────────────────────────────────────────────
+  var tickers=Object.keys(tickerMap).sort(function(a,b){return tickerMap[b].net-tickerMap[a].net;});
+  var thtml='';
+  if(!tickers.length){thtml='<span style="color:var(--text3)">No options trades found since start date.</span>';}
+  else{
+    thtml+='<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:11px;font-family:DM Mono,monospace">'
+      +'<thead><tr style="background:var(--bg3)">'
+      +'<th style="text-align:left;padding:9px 12px;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Ticker</th>'
+      +'<th style="text-align:right;padding:9px 12px;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Sold</th>'
+      +'<th style="text-align:right;padding:9px 12px;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Expired</th>'
+      +'<th style="text-align:right;padding:9px 12px;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Expire%</th>'
+      +'<th style="text-align:right;padding:9px 12px;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Gross</th>'
+      +'<th style="text-align:right;padding:9px 12px;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Buyback</th>'
+      +'<th style="text-align:right;padding:9px 12px;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">Net</th>'
+      +'<th style="text-align:right;padding:9px 12px;color:var(--text3);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:0.05em">BB%</th>'
+      +'</tr></thead><tbody>';
+    tickers.forEach(function(t){
+      var tm=tickerMap[t];
+      var expPct=tm.sold>0?r2(tm.expired/tm.sold*100):0;
+      var bbPct=tm.grossIn>0?r2(tm.buybacks/tm.grossIn*100):0;
+      var netColor=tm.net<0?'var(--red)':tm.net<500?'var(--amber)':'var(--green)';
+      var expColor=expPct>=70?'var(--green)':expPct>=50?'var(--amber)':'var(--red)';
+      thtml+='<tr style="border-top:1px solid var(--border)">'
+        +'<td style="padding:8px 12px;font-weight:700;font-size:12px">'+t+'</td>'
+        +'<td style="text-align:right;padding:8px 12px">'+tm.sold+'</td>'
+        +'<td style="text-align:right;padding:8px 12px">'+tm.expired+'</td>'
+        +'<td style="text-align:right;padding:8px 12px;color:'+expColor+'">'+expPct+'%</td>'
+        +'<td style="text-align:right;padding:8px 12px">'+fmt(tm.grossIn)+'</td>'
+        +'<td style="text-align:right;padding:8px 12px;color:var(--red)">−'+fmt(tm.buybacks)+'<span style="color:var(--text3);font-size:9px"> ('+bbPct+'%)</span></td>'
+        +'<td style="text-align:right;padding:8px 12px;font-weight:800;color:'+netColor+'">'+fmt(tm.net)+'</td>'
+        +'<td style="text-align:right;padding:8px 12px;color:'+(bbPct>60?'var(--red)':bbPct>35?'var(--amber)':'var(--green)')+'">'+bbPct+'%</td>'
+        +'</tr>';
+    });
+    // totals row
+    thtml+='<tr style="border-top:2px solid var(--border2);background:var(--bg3)">'
+      +'<td style="padding:8px 12px;font-weight:700;font-size:12px;color:var(--text2)">TOTAL</td>'
+      +'<td colspan="3"></td>'
+      +'<td style="text-align:right;padding:8px 12px;font-weight:700;color:var(--amber)">'+fmt(grossAll)+'</td>'
+      +'<td style="text-align:right;padding:8px 12px;font-weight:700;color:var(--red)">−'+fmt(buybackAll)+'</td>'
+      +'<td style="text-align:right;padding:8px 12px;font-weight:800;color:var(--green)">'+fmt(netAll)+'</td>'
+      +'<td style="text-align:right;padding:8px 12px;font-weight:700;color:'+(buybackDragPct>60?'var(--red)':buybackDragPct>35?'var(--amber)':'var(--green)')+'">'+buybackDragPct+'%</td>'
+      +'</tr>';
+    thtml+='</tbody></table></div>';
+    thtml+='<div style="font-size:10px;color:var(--text3);font-family:DM Mono,monospace;margin-top:8px">Expire% = expired worthless ÷ sold. BB% = buybacks ÷ gross premium. Only tickers with options trades shown.</div>';
+  }
+  $d('bench-byticker').innerHTML=thtml;
 }
 
 // -- Prices: manual only - no auto-fetch on load --
@@ -7178,7 +7560,7 @@ function ibInit(forceAcct){
     // collect trades within the selected lookback window only
     (h.trades||[]).forEach(function(t){
       if(new Date(t.date+'T12:00:00')<cutoff)return;
-      if(t.type==='sold_call'||t.type==='sold_put') agg[tk].trades.push(t);
+      if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close') agg[tk].trades.push(t);
     });
   });
 
@@ -7341,7 +7723,7 @@ function ibUpdate(id,field,val){
       var pt=0,pw=0;
       (HOLDINGS[matchH].trades||[]).forEach(function(t){
         if(new Date(t.date+'T12:00:00')<cutoff2)return;
-        if(t.type==='sold_call'||t.type==='sold_put'){pt+=(t.amount>0?t.amount:((t.premium||0)*(t.contracts||1)*100));pw++;}
+        if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){pt+=(t.amount>0?t.amount:((t.premium||0)*(t.contracts||1)*100));pw++;}
       });
       if(pw>0) row.wkPrem=r2(pt/Math.max(1,row.ct)/Math.max(1,lbWks));
       else if(row.cp>0) row.wkPrem=r2(row.cp*0.015*100);
@@ -8192,7 +8574,7 @@ function renderExpiryCalendar(tickers){
     var cutoff=new Date(now.getTime()-60*86400000);
     var acctName=h.account&&ACCOUNTS[h.account]?ACCOUNTS[h.account].name:'';
 
-    ['sold_call','sold_put'].forEach(function(sellType){
+    ['sold_call','sold_put','bought_put','bought_call'].forEach(function(sellType){
       for(var i=0;i<sortedDesc.length;i++){
         var t=sortedDesc[i];
         if(t.type!==sellType)continue;
@@ -8206,14 +8588,16 @@ function renderExpiryCalendar(tickers){
           var c=sortedDesc[j];
           var cDate=new Date(c.date+'T12:00:00');
           if(cDate<=tDate)continue;
-          if(c.type==='bought_close'||c.type==='expired'){
+          if(c.type==='bought_close'||c.type==='sold_close'||c.type==='expired'){
             if(c.strike&&t.strike&&String(c.strike)!==String(t.strike))continue;
             var newerSell=false;
             for(var k=0;k<sortedDesc.length;k++){
               var n=sortedDesc[k];
               if(n.type!==sellType||n===t)continue;
+              // Same-strike only: rolling to different strike doesn't interrupt close
+              if(n.strike&&t.strike&&String(n.strike)!==String(t.strike))continue;
               var nDate=new Date(n.date+'T12:00:00');
-              if(nDate>tDate&&nDate<=cDate){newerSell=true;break;}
+              if(nDate>tDate&&nDate<cDate){newerSell=true;break;}
             }
             if(!newerSell){closed=true;break;}
           }
@@ -8227,12 +8611,12 @@ function renderExpiryCalendar(tickers){
           var daysLeft=expiry?Math.round((expiry-now)/86400000):null;
           items.push({
             tk:tk, ticker:h.ticker||tk.split('_')[0], acctName:acctName,
-            type:sellType==='sold_call'?'CALL':'PUT',
+            type:sellType==='sold_call'?'CALL':sellType==='bought_put'?'LONG PUT':sellType==='bought_call'?'LONG CALL':'PUT',
             strike:t.strike, contracts:t.contracts||1,
             expiry:expiry, daysLeft:daysLeft,
             currentPrice:h.currentPrice||0, sellDate:t.date||''
           });
-          break;
+            // show all open positions per strike
         }
       }
     });
@@ -8243,7 +8627,7 @@ function renderExpiryCalendar(tickers){
   // Dedup: one entry per ticker+account+type (CALL and PUT can coexist)
   var bestByKey={};
   items.forEach(function(item){
-    var key=item.ticker+'|'+(item.acctName||'')+'|'+item.type;
+    var key=item.ticker+'|'+(item.acctName||'')+'|'+item.type+'|'+item.strike;
     if(!bestByKey[key]||item.sellDate>bestByKey[key].sellDate)bestByKey[key]=item;
   });
   items=Object.values(bestByKey);
@@ -8324,7 +8708,7 @@ function renderRollAlerts(){
       if(t.type==='sold_call'||t.type==='sold_put'){
         if(!stacks[sk])stacks[sk]=[];
         stacks[sk].push(t);
-      } else if(t.type==='bought_close'||t.type==='expired'){
+      } else if(t.type==='sold_close'||t.type==='bought_close'||t.type==='expired'){
         if(stacks[sk]&&stacks[sk].length){ stacks[sk].pop(); }
         else {
           // No exact strike match - pop most recent open across all strikes
@@ -8358,7 +8742,7 @@ function renderRollAlerts(){
       if(m){var months={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};var mo=months[(m[1]||'').toUpperCase()];if(mo!==undefined)expiry=new Date(2000+parseInt(m[3]),mo,parseInt(m[2]));}
     }
     var daysLeft=expiry?Math.round((expiry-now)/86400000):null;
-    if(daysLeft==null||daysLeft>14) return;
+    if(daysLeft==null||daysLeft>14||daysLeft<0) return; // skip already-expired
 
     var ticker=h.ticker||tk;
     var cp=h.currentPrice||0;
@@ -8418,7 +8802,7 @@ function debugOpenPositions(){
     var h=HOLDINGS[tk]; if(!h||h.type!=='wheel')return;
     var trades=h.trades||[];
     var sortedDesc=trades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
-    ['sold_call','sold_put'].forEach(function(sellType){
+    ['sold_call','sold_put','bought_put','bought_call'].forEach(function(sellType){
       for(var i=0;i<sortedDesc.length;i++){
         var t=sortedDesc[i];
         if(t.type!==sellType)continue;
@@ -8429,7 +8813,7 @@ function debugOpenPositions(){
         for(var j=0;j<sortedDesc.length;j++){
           var c=sortedDesc[j];
           if(new Date(c.date+'T12:00:00')<=tDate)continue;
-          if(c.type==='bought_close'||c.type==='expired'){
+          if(c.type==='bought_close'||c.type==='sold_close'||c.type==='expired'){
             if(c.strike&&t.strike&&String(c.strike)!==String(t.strike))continue;
             closed=true;
             results.push(tk+' '+sellType+' $'+t.strike+' '+t.date+' ? CLOSED by '+c.type+' $'+c.strike+' '+c.date);
@@ -8464,7 +8848,7 @@ function renderDashboard(){
       if(!byYear[y])byYear[y]={};
       if(!byYear[y][mo])byYear[y][mo]={in:0,out:0};
       var val=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
-      if(t.type==='sold_call'||t.type==='sold_put')byYear[y][mo].in=r2(byYear[y][mo].in+val);
+      if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close')byYear[y][mo].in=r2(byYear[y][mo].in+val);
       else if(t.type==='bought_close')byYear[y][mo].out=r2(byYear[y][mo].out+val);
     });
   });
@@ -8491,7 +8875,7 @@ function renderDashboard(){
     var opTrades=h.trades||[];
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
-    ['sold_put','sold_call'].forEach(function(sellType){
+    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
@@ -8703,8 +9087,10 @@ function renderDashboard(){
     if(gross>0){
       grid+='<div style="height:4px;background:rgba(255,255,255,0.07);border-radius:2px;margin-bottom:10px;overflow:hidden">';
       grid+='<div style="width:'+barPct+'%;height:100%;background:'+(isCurrent?'var(--amber)':'var(--green)')+';border-radius:2px"></div></div>';
-      // NET - big, first
-      grid+='<div style="font-size:18px;font-weight:900;color:'+(isCurrent?'var(--amber)':'var(--green)')+';font-family:DM Mono,monospace;line-height:1;margin-bottom:6px">'+fmt(net)+' <span style="font-size:9px;font-weight:600;opacity:0.6">net</span></div>';
+      // NET - big, first (show red if negative)
+      var netColor=isCurrent?'var(--amber)':net>=0?'var(--green)':'var(--red)';
+      var netLabel=net<0?'-'+fmt(Math.abs(net)):fmt(net);
+      grid+='<div style="font-size:18px;font-weight:900;color:'+netColor+';font-family:DM Mono,monospace;line-height:1;margin-bottom:6px">'+netLabel+' <span style="font-size:9px;font-weight:600;opacity:0.6">net</span></div>';
       // GROSS - small, second
       grid+='<div style="font-size:10px;color:var(--green);font-family:DM Mono,monospace">+'+fmt(gross)+' gross</div>';
       // BUYBACK - small, third (only if exists)
@@ -8797,7 +9183,7 @@ function renderDashboard(){
     (h.trades||[]).forEach(function(t){
       var val=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
       var isYr=t.date&&t.date.slice(0,4)===activeYr;
-      if(t.type==='sold_call'||t.type==='sold_put'){allIn=r2(allIn+val);if(isYr)yrIn=r2(yrIn+val);}
+      if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){allIn=r2(allIn+val);if(isYr)yrIn=r2(yrIn+val);}
       else if(t.type==='bought_close'){allOut=r2(allOut+val);if(isYr)yrOut=r2(yrOut+val);}
     });
     var yrNet=r2(yrIn-yrOut), allNet=r2(allIn-allOut);
@@ -8807,7 +9193,7 @@ function renderDashboard(){
     var opSorted=opTrades.slice().sort(function(a,b){return new Date(b.date+'T12:00:00')-new Date(a.date+'T12:00:00');});
     var opCutoff=new Date(now.getTime()-60*86400000);
     var openPos=[];
-    ['sold_put','sold_call'].forEach(function(sellType){
+    ['sold_put','sold_call','bought_put','bought_call'].forEach(function(sellType){
       for(var opi=0;opi<opSorted.length;opi++){
         var opT=opSorted[opi];
         if(opT.type!==sellType)continue;
@@ -9075,7 +9461,7 @@ function drillDashMonth(yr,mo){
         var td=new Date(t.date+'T12:00:00');
         if(td<wS||td>=wE)return;
         var val=t.amount>0?t.amount:r2((t.premium||0)*(t.contracts||1)*100);
-        if(t.type==='sold_call'||t.type==='sold_put')wIn=r2(wIn+val);
+        if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close')wIn=r2(wIn+val);
         else if(t.type==='bought_close')wOut=r2(wOut+val);
       });
     });
@@ -9137,7 +9523,7 @@ function buildPremiumConsistencyChart(tickers){
         var td=new Date(t.date+'T12:00:00');
         if(td<start||td>=end)return;
         var val=t.amount>0?t.amount:((t.premium||0)*(t.contracts||1)*100);
-        if(t.type==='sold_call'||t.type==='sold_put')inn+=val;
+        if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close')inn+=val;
         else if(t.type==='bought_close')out+=val;
       });
     });
@@ -9532,7 +9918,7 @@ function renderTaxPlanner(){
       var val=t.amount>0?t.amount:((t.premium||0)*(t.contracts||1)*100);
       var qi=-1; for(var q=0;q<4;q++){if(Q_MONTHS[q].indexOf(mo)>=0){qi=q;break;}}
       if(qi<0)return;
-      if(t.type==='sold_call'||t.type==='sold_put'){aData[id].q[qi]+=val;aData[id].annual+=val;}
+      if(t.type==='sold_call'||t.type==='sold_put'||t.type==='sold_close'){aData[id].q[qi]+=val;aData[id].annual+=val;}
       else if(t.type==='bought_close'){aData[id].q[qi]-=val;aData[id].annual-=val;}
     });
   });
@@ -9897,25 +10283,21 @@ function toggleLockPw(){
   else{inp.type='password';if(eye)eye.textContent='?';}
 }
 
-function lockAction(){
-  var stored=localStorage.getItem(OI_PW_KEY);
-  if(!stored){showOIApp();return;}
-  if(_lockMode==='setup')doSetup();else doUnlock();
-}
+function lockAction(){if(_lockMode==='setup')doSetup();else doUnlock();}
 
 function doUnlock(){
   var pw=document.getElementById('lock-pw').value;
   var stored=localStorage.getItem(OI_PW_KEY);
-  // If no password set, just unlock
   if(!stored){showOIApp();return;}
-  if(!pw){showOIApp();return;}
-  if(hashPw(pw)!==stored){
-    // Wrong password - but also accept blank to bypass
-    document.getElementById('lock-err').textContent='Incorrect password. Leave blank and click Unlock to bypass.';
-    document.getElementById('lock-pw').focus();
+  if(!pw||pw.trim()===''){
+    // Blank = bypass (show hint)
+    document.getElementById('lock-err').textContent='Enter password or click "Forgot password?" below to reset.';
     return;
   }
-  showOIApp();
+  if(hashPw(pw)===stored){showOIApp();return;}
+  document.getElementById('lock-err').textContent='Incorrect password. Try again or use "Forgot password?" below.';
+  document.getElementById('lock-pw').value='';
+  document.getElementById('lock-pw').focus();
 }
 
 function doSetup(){
@@ -9940,9 +10322,15 @@ function lockOI(){
 }
 
 window.addEventListener('load', function(){
-  // Clear any stored password and go straight to app
-  try{localStorage.removeItem(OI_PW_KEY);}catch(e){}
-  showOIApp();
+  var stored=localStorage.getItem(OI_PW_KEY);
+  if(!stored){
+    // No password set - go straight to app
+    showOIApp();
+  } else {
+    // Password is set - show lock screen
+    _lockMode='unlock';
+    document.getElementById('lock-pw').focus();
+  }
 });
 
 
@@ -10030,7 +10418,7 @@ function mscCalc(){
       var el = document.getElementById('msc-cb-improvement');
       if(el){
         el.textContent = (improvement>0?'-':'+')+'$'+Math.abs(improvement).toFixed(2)+'/sh';
-        el.style.color = improvement>0?'var(--green)':\'var(--red)\';
+        el.style.color = improvement>0?"var(--green)":"var(--red)";
       }
     }
   }
@@ -10069,6 +10457,429 @@ function mscRender(){
 // Init with one empty row
 if(document.getElementById('msc-body')) mscRender();
 
+
+// ── Archived Holdings Management ─────────────────────────────────────
+function _hiddenKeys(){
+  // Returns keys that are hidden from the table: archived OR zeroed-out (shares=0, no open positions)
+  var nowD=new Date(); nowD.setHours(0,0,0,0);
+  return Object.keys(HOLDINGS).filter(function(k){
+    var h=HOLDINGS[k];
+    if(h.archived) return true;
+    if(h.shares===0 && h.type==='wheel' && (h.trades||[]).length>0){
+      var hasOpen=(h.trades||[]).some(function(tr){
+        if(tr.type!=='sold_put'&&tr.type!=='sold_call') return false;
+        if(!tr.expiry) return false;
+        return new Date(tr.expiry+'T12:00:00')>=nowD;
+      });
+      if(!hasOpen) return true;
+    }
+    return false;
+  });
+}
+
+function renderArchivedBadge(){
+  var hiddenKeys=_hiddenKeys();
+  var badge=$d('archived-badge');
+  if(!badge) return;
+  if(!hiddenKeys.length){badge.style.display='none';return;}
+  badge.style.display='inline-flex';
+  badge.textContent='📦 '+hiddenKeys.length+' hidden holding'+(hiddenKeys.length>1?'s':'')+' (sold/archived) — click to view';
+}
+
+function showArchivedPanel(){
+  var archivedKeys=_hiddenKeys();
+  if(!archivedKeys.length){alert('No hidden holdings.');return;}
+  var lines=archivedKeys.map(function(k){
+    var h=HOLDINGS[k];
+    var net=(h.trades||[]).reduce(function(s,t){
+      return s+(t.type==='sold_put'||t.type==='sold_call'||t.type==='sold_close'?Math.max(0,t.amount||0):0)
+              -(t.type==='bought_close'||t.type==='bought_put'||t.type==='bought_call'?Math.abs(t.amount||0):0);
+    },0);
+    return (h.ticker||k)+': $'+Math.round(net)+' net premium ('+( h.trades||[]).length+' trades)';
+  });
+  var choice=prompt('ARCHIVED HOLDINGS (click Cancel to keep archived):\n\n'+lines.join('\n')+'\n\nType ticker to RESTORE it (or Cancel):');
+  if(!choice) return;
+  var ticker=choice.trim().toUpperCase();
+  var found=archivedKeys.find(function(k){return (HOLDINGS[k].ticker||k).toUpperCase()===ticker||k.toUpperCase()===ticker;});
+  if(found){
+    delete HOLDINGS[found].archived;
+    autoSave();
+    renderAll();
+    alert('Restored '+ticker+' to active holdings.');
+  } else {
+    alert('Ticker "'+ticker+'" not found in archived holdings.');
+  }
+}
+
+
+// ==============================
+// == INCOME REPORT TAB ==
+// ==============================
+var _irChart=null, _irSelMo=null, _irNarrLoaded=false;
+var _irByYM={}, _irByYMTk={};
+
+function _irBuildData(){
+  // Mirrors dashboard summaryTickers exactly:
+  // Each holding is counted under its own account tag.
+  // Untagged holdings (account='') are counted under a special '__untagged__' key
+  // and included in every account filter (same as dashboard: acct===ACTIVE_ACCOUNT||!acct)
+  _irByYM={}; _irByYMTk={};
+  Object.keys(HOLDINGS).forEach(function(key){
+    var h=HOLDINGS[key];
+    var acct=h.account||'__untagged__';
+    var tk=h.ticker||key.split('_')[0];
+    (h.trades||[]).forEach(function(tr){
+      if(!tr.date) return;
+      var yr=tr.date.slice(0,4), mo=parseInt(tr.date.slice(5,7))||0;
+      if(!mo) return;
+      if(!_irByYM[yr])_irByYM[yr]={};
+      if(!_irByYM[yr][mo])_irByYM[yr][mo]={};
+      if(!_irByYM[yr][mo][acct])_irByYM[yr][mo][acct]={in:0,out:0};
+      if(!_irByYMTk[yr])_irByYMTk[yr]={};
+      if(!_irByYMTk[yr][mo])_irByYMTk[yr][mo]={};
+      if(!_irByYMTk[yr][mo][tk])_irByYMTk[yr][mo][tk]={acct:acct,in:0,out:0};
+      var val=tr.amount>0?tr.amount:r2((tr.premium||0)*(tr.contracts||1)*100);
+      if(tr.type==='sold_call'||tr.type==='sold_put'){
+        _irByYM[yr][mo][acct].in=r2(_irByYM[yr][mo][acct].in+val);
+        _irByYMTk[yr][mo][tk].in=r2(_irByYMTk[yr][mo][tk].in+val);
+      } else if(tr.type==='bought_close'){
+        _irByYM[yr][mo][acct].out=r2(_irByYM[yr][mo][acct].out+val);
+        _irByYMTk[yr][mo][tk].out=r2(_irByYMTk[yr][mo][tk].out+val);
+      }
+    });
+  });
+}
+function _irMoNet(yr,mo,acct){
+  var m=(_irByYM[String(yr)]||{})[mo]||{};
+  var i=0,o=0;
+  Object.keys(m).forEach(function(k){
+    // Mirror dashboard logic: include exact match OR untagged holdings in every account
+    if(acct==='ALL' || k===acct || k==='__untagged__'){
+      i+=m[k].in; o+=m[k].out;
+    }
+  });
+  return r2(i-o);
+}
+
+function _irYTD(yr,upTo,acct){var t=0;for(var m=1;m<=upTo;m++)t+=_irMoNet(yr,m,acct);return r2(t);}
+function _irYearTotal(yr,acct){return _irYTD(yr,12,acct);}
+
+function irInitSelects(){
+  var aEl=$d('ir-acct'), yEl=$d('ir-yr');
+  if(!aEl||!yEl){console.warn('IR: selects not found in DOM');return;}
+
+  var savedAcct=aEl.value||'ALL';
+  var savedYr=yEl.value||String(new Date().getFullYear());
+
+  // Rebuild account options from live ACCOUNTS object
+  var acctKeys=Object.keys(ACCOUNTS).filter(function(k){return ACCOUNTS[k]&&ACCOUNTS[k].name;});
+  var acctHTML='<option value="ALL">All accounts</option>'+
+    acctKeys.map(function(k){return '<option value="'+k+'">'+(ACCOUNTS[k].name||k)+'</option>';}).join('');
+  aEl.innerHTML=acctHTML;
+
+  // Restore or sync to ACTIVE_ACCOUNT
+  var targetAcct=(savedAcct&&(savedAcct==='ALL'||ACCOUNTS[savedAcct]))?savedAcct:
+                 (ACTIVE_ACCOUNT&&(ACTIVE_ACCOUNT==='ALL'||ACCOUNTS[ACTIVE_ACCOUNT]))?ACTIVE_ACCOUNT:'ALL';
+  aEl.value=targetAcct;
+
+  // Year is always auto: current year vs previous year
+  var nowYr=new Date().getFullYear();
+  var lbl=$d('ir-yr-label');
+  if(lbl) lbl.textContent=nowYr+' vs '+(nowYr-1);
+  yEl.innerHTML='<option value="'+nowYr+'">'+nowYr+'</option>';
+  yEl.value=String(nowYr);
+  console.log('IR selects: acct='+aEl.value+' yr='+nowYr+' ('+acctKeys.length+' accounts)');
+}
+
+var _irMoNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderIncomeReport(forceNarr){
+  if(!Object.keys(HOLDINGS).length){
+    var nEl=$d('ir-narrative');
+    if(nEl){nEl.style.fontStyle='';nEl.style.color='var(--text3)';nEl.textContent='No data loaded yet. Go to Upload Fidelity tab and upload your Activity CSV, or use Import to load a saved JSON.';}
+    return;
+  }
+  _irBuildData();
+  irInitSelects();
+  var acctEl=$d('ir-acct'), yrEl=$d('ir-yr');
+  if(!acctEl||!yrEl) return;
+  var acct=acctEl.value;
+  var selYr=parseInt(yrEl.value)||new Date().getFullYear();
+  var prevYr=selYr-1;
+  var nowY=new Date().getFullYear(), nowM=new Date().getMonth()+1;
+  var isCurr=selYr===nowY;
+  var upTo=isCurr?nowM:12;
+
+  var legC=$d('ir-leg-curr'), legP=$d('ir-leg-prev');
+  if(legC)legC.textContent=selYr; if(legP)legP.textContent=prevYr;
+
+  var ytdC=_irYTD(selYr,upTo,acct), ytdP=_irYTD(prevYr,upTo,acct);
+  var delta=r2(ytdC-ytdP);
+  var pct=ytdP?Math.round(delta/Math.abs(ytdP)*100):null;
+  var avgMo=upTo>0?r2(ytdC/upTo):0;
+  var prevFull=_irYearTotal(prevYr,acct);
+  var bestMo=0,bestV=0;
+  for(var m=1;m<=upTo;m++){var v=_irMoNet(selYr,m,acct);if(v>bestV){bestV=v;bestMo=m;}}
+
+  function fmtIR(n){if(n==null||isNaN(n))return '—';return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fmtS(n){if(!n)return '—';var a=Math.abs(n);return (n<0?'-':'')+'$'+(a>=1000?(a/1000).toFixed(1)+'k':a.toFixed(0));}
+
+  var nowY=new Date().getFullYear();
+  var nowM2=new Date().getMonth()+1;
+  // Always use current year vs previous year automatically
+  var autoSelYr=nowY, autoPrevYr=nowY-1;
+  var autoUpTo=nowM2; // YTD through current month
+
+  var ytdC2=_irYTD(autoSelYr,autoUpTo,acct);
+  var ytdP2=_irYTD(autoPrevYr,autoUpTo,acct);
+  var autoDelta=r2(ytdC2-ytdP2);
+  var autoPct=ytdP2?Math.round(autoDelta/Math.abs(ytdP2)*100):null;
+  var autoAvgC=autoUpTo>0?r2(ytdC2/autoUpTo):0;
+  var autoAvgP=autoUpTo>0?r2(ytdP2/autoUpTo):0;
+  var autoAvgDelta=r2(autoAvgC-autoAvgP);
+  var autoAvgPct=autoAvgP?Math.round(autoAvgDelta/Math.abs(autoAvgP)*100):null;
+  var bestMoC=0,bestVC=0,bestMoP=0,bestVP=0;
+  for(var bm=1;bm<=autoUpTo;bm++){
+    var bvc=_irMoNet(autoSelYr,bm,acct),bvp=_irMoNet(autoPrevYr,bm,acct);
+    if(bvc>bestVC){bestVC=bvc;bestMoC=bm;}
+    if(bvp>bestVP){bestVP=bvp;bestMoP=bm;}
+  }
+
+  function _irMoGross(yr,mo,acct){
+    var m=(_irByYM[String(yr)]||{})[mo]||{};
+    var i=0,o=0;
+    Object.keys(m).forEach(function(k){
+      if(acct==='ALL'||k===acct||k==='__untagged__'){i+=m[k].in;o+=m[k].out;}
+    });
+    return {in:r2(i),out:r2(o)};
+  }
+  function _irYTDGross(yr,upTo,acct){
+    var ti=0,to=0;
+    for(var m=1;m<=upTo;m++){var g=_irMoGross(yr,m,acct);ti+=g.in;to+=g.out;}
+    return {in:r2(ti),out:r2(to)};
+  }
+  var grossC=_irYTDGross(autoSelYr,autoUpTo,acct);
+  var grossP=_irYTDGross(autoPrevYr,autoUpTo,acct);
+  var TDs='padding:7px 16px;font-size:12px;color:var(--text3);border-bottom:1px solid var(--border2);white-space:nowrap';
+
+  function pctBadge(p){
+    if(p==null) return '<span style="color:var(--text3)">—</span>';
+    var clr=p>=0?'var(--green)':'#e55';
+    return '<span style="color:'+clr+';font-weight:700">'+(p>=0?'+':'')+p+'%</span>';
+  }
+  function deltaCell(d){
+    var clr=d>0?'var(--green)':d<0?'#e55':'var(--text3)';
+    return '<span style="color:'+clr+'">'+(d>0?'+':'')+fmtIR(d)+'</span>';
+  }
+
+  var TH='padding:9px 16px;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border2);white-space:nowrap';
+  var TD='padding:10px 16px;font-size:15px;font-weight:700;color:var(--text);font-family:\'Syne\',sans-serif;border-bottom:1px solid var(--border2);white-space:nowrap';
+  var TD1='padding:10px 16px;font-size:13px;font-weight:600;color:var(--text2);border-bottom:1px solid var(--border2)';
+  var sumEl=$d('ir-summary');
+  var moLabel='Jan–'+_irMoNames[autoUpTo-1];
+  if(sumEl) sumEl.innerHTML=
+    '<table style="width:100%;border-collapse:collapse;background:var(--bg2);border-radius:var(--r);overflow:hidden">'+
+      '<thead><tr>'+
+        '<th style="'+TH+';text-align:left">Metric</th>'+
+        '<th style="'+TH+';text-align:right">YTD '+autoSelYr+'<br><span style="font-weight:400;font-size:9px;text-transform:none;letter-spacing:0">'+moLabel+'</span></th>'+
+        '<th style="'+TH+';text-align:right">YTD '+autoPrevYr+'<br><span style="font-weight:400;font-size:9px;text-transform:none;letter-spacing:0">'+moLabel+'</span></th>'+
+        '<th style="'+TH+';text-align:right">Difference</th>'+
+        '<th style="'+TH+';text-align:right">% Change</th>'+
+      '</tr></thead>'+
+      '<tbody>'+
+        '<tr>'+
+          '<td style="'+TD1+'">Net premium</td>'+
+          '<td style="'+TD+';text-align:right">'+fmtIR(ytdC2)+'</td>'+
+          '<td style="'+TD+';text-align:right;color:var(--text2)">'+fmtIR(ytdP2)+'</td>'+
+          '<td style="'+TD+';text-align:right">'+deltaCell(autoDelta)+'</td>'+
+          '<td style="'+TD+';text-align:right">'+pctBadge(autoPct)+'</td>'+
+        '</tr>'+
+        '<tr>'+
+          '<td style="'+TDs+'">  ↳ Gross premiums in</td>'+
+          '<td style="'+TDs+';text-align:right;color:var(--green)">+'+fmtIR(grossC.in)+'</td>'+
+          '<td style="'+TDs+';text-align:right;color:var(--green)">+'+fmtIR(grossP.in)+'</td>'+
+          '<td style="'+TDs+';text-align:right">'+deltaCell(r2(grossC.in-grossP.in))+'</td>'+
+          '<td style="'+TDs+';text-align:right">'+pctBadge(grossP.in?Math.round((grossC.in-grossP.in)/Math.abs(grossP.in)*100):null)+'</td>'+
+        '</tr>'+
+        '<tr>'+
+          '<td style="'+TDs+'">  ↳ Buybacks out</td>'+
+          '<td style="'+TDs+';text-align:right;color:#e55">-'+fmtIR(grossC.out)+'</td>'+
+          '<td style="'+TDs+';text-align:right;color:#e55">-'+fmtIR(grossP.out)+'</td>'+
+          '<td style="'+TDs+';text-align:right">'+deltaCell(r2(grossC.out-grossP.out))+'</td>'+
+          '<td style="'+TDs+';text-align:right">'+pctBadge(grossP.out?Math.round((grossC.out-grossP.out)/Math.abs(grossP.out)*100):null)+'</td>'+
+        '</tr>'+
+        '<tr>'+
+          '<td style="'+TD1+'">Monthly avg</td>'+
+          '<td style="'+TD+';text-align:right">'+fmtIR(autoAvgC)+'</td>'+
+          '<td style="'+TD+';text-align:right;color:var(--text2)">'+fmtIR(autoAvgP)+'</td>'+
+          '<td style="'+TD+';text-align:right">'+deltaCell(autoAvgDelta)+'</td>'+
+          '<td style="'+TD+';text-align:right">'+pctBadge(autoAvgPct)+'</td>'+
+        '</tr>'+
+        '<tr>'+
+          '<td style="'+TD1+';border-bottom:none">Best month</td>'+
+          '<td style="'+TD+';text-align:right;border-bottom:none">'+(bestMoC?_irMoNames[bestMoC-1]+' '+fmtS(bestVC):'—')+'</td>'+
+          '<td style="'+TD+';text-align:right;color:var(--text2);border-bottom:none">'+(bestMoP?_irMoNames[bestMoP-1]+' '+fmtS(bestVP):'—')+'</td>'+
+          '<td style="'+TD+';text-align:right;border-bottom:none">—</td>'+
+          '<td style="'+TD+';text-align:right;border-bottom:none">—</td>'+
+        '</tr>'+
+      '</tbody>'+
+    '</table>';
+
+  // Sync dropdown-based vars to auto vars for month grid and chart
+  selYr=autoSelYr; prevYr=autoPrevYr; upTo=autoUpTo;
+  ytdC=ytdC2; ytdP=ytdP2; delta=autoDelta; pct=autoPct;
+  avgMo=autoAvgC; bestMo=bestMoC; bestV=bestVC;
+
+  // Month cards
+  var maxV=1;
+  for(var m=1;m<=12;m++){var v=Math.max(_irMoNet(selYr,m,acct),_irMoNet(prevYr,m,acct));if(v>maxV)maxV=v;}
+  var mhtml='';
+  for(var m=1;m<=12;m++){
+    var cv=_irMoNet(selYr,m,acct), pv=_irMoNet(prevYr,m,acct);
+    var dv=r2(cv-pv), fut=isCurr&&m>nowM, isSel=_irSelMo===m;
+    var bar=Math.min(100,Math.round(cv/maxV*100));
+    var barClr=cv<pv&&cv>0?'#e55':'#185FA5';
+    mhtml+='<div style="background:var(--bg);border:1px solid '+(isSel?'#185FA5':'var(--border2)')+';border-width:'+(isSel?'2px':'1px')+';border-radius:var(--r);padding:9px 9px 7px;cursor:pointer;opacity:'+(fut?'0.35':'1')+';pointer-events:'+(fut?'none':'auto')+'" onclick="irToggleDetail('+m+')">'
+      +'<div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">'+_irMoNames[m-1]+'</div>'
+      +'<div style="font-size:14px;font-weight:600;color:var(--text)">'+( cv>0?fmtS(cv):'—')+'</div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:1px">'+(pv>0?prevYr+': '+fmtS(pv):'')+'</div>'
+      +(cv>0&&pv>0?'<div style="font-size:10px;margin-top:2px;color:'+(dv>=0?'var(--green)':'#e55')+'">'+(dv>=0?'+':'')+fmtS(dv)+'</div>':'')
+      +'<div style="height:3px;border-radius:2px;background:var(--border2);margin-top:5px;overflow:hidden"><div style="height:100%;border-radius:2px;background:'+barClr+';width:'+bar+'%"></div></div>'
+      +'</div>';
+  }
+  var mEl=$d('ir-months'); if(mEl)mEl.innerHTML=mhtml;
+
+  // Bar chart
+  if(typeof Chart==='undefined'){
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    s.onload=function(){renderIncomeReport(forceNarr);};
+    document.head.appendChild(s); return;
+  }
+  var cData=[],pData=[];
+  for(var m=1;m<=12;m++){
+    var cv=_irMoNet(selYr,m,acct),pv=_irMoNet(prevYr,m,acct);
+    cData.push(cv>0?Math.round(cv):0); pData.push(pv>0?Math.round(pv):0);
+  }
+  if(_irChart)_irChart.destroy();
+  var ctx=$d('ir-chart'); if(!ctx)return;
+  _irChart=new Chart(ctx.getContext('2d'),{
+    type:'bar',
+    data:{labels:_irMoNames,datasets:[
+      {label:String(selYr),data:cData,backgroundColor:'#185FA5',borderRadius:3},
+      {label:String(prevYr),data:pData,backgroundColor:'rgba(136,135,128,0.35)',borderRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:10},color:'#888780',autoSkip:false},grid:{display:false}},
+        y:{ticks:{font:{size:10},color:'#888780',callback:function(v){return '$'+(v>=1000?(v/1000).toFixed(1)+'k':v);}},grid:{color:'rgba(136,135,128,0.12)'}}
+      }}
+  });
+
+  // Always render narrative fallback on first load; AI on demand
+  var nEl=$d('ir-narrative');
+  if(nEl&&(nEl.textContent==='Click Refresh Summary to generate AI analysis.'||forceNarr)){
+    if(forceNarr){
+      _irGenNarrative(selYr,prevYr,acct,upTo,ytdC,ytdP,delta,pct,avgMo,bestMo,bestV,prevFull,fmtIR,fmtS);
+    } else {
+      // Show instant fallback so the tab isn't blank
+      nEl.style.fontStyle=''; nEl.style.color='var(--text2)';
+      nEl.textContent=_irFallback(selYr,prevYr,upTo,ytdC,delta,pct,avgMo,bestMo,bestV,fmtIR,fmtS);
+    }
+  }
+}
+
+function _irGenNarrative(selYr,prevYr,acct,upTo,ytdC,ytdP,delta,pct,avgMo,bestMo,bestV,prevFull,fmtIR,fmtS){
+  var el=$d('ir-narrative'); if(!el)return;
+  el.style.fontStyle='italic'; el.style.color='var(--text3)'; el.textContent='Generating summary...';
+  var acctName=acct==='ALL'?'all accounts':((ACCOUNTS[acct]&&ACCOUNTS[acct].name)||acct);
+  var moLines=[];
+  for(var m=1;m<=upTo;m++){
+    var cv=_irMoNet(selYr,m,acct),pv=_irMoNet(prevYr,m,acct);
+    if(cv>0||pv>0)moLines.push(_irMoNames[m-1]+': $'+cv.toFixed(0)+' ('+prevYr+': $'+pv.toFixed(0)+')');
+  }
+  var runRate=Math.round(ytdC/upTo*12);
+  var prompt='Summarize options wheel premium income data for a trader. Write exactly 3 plain English sentences with no bullet points, headers, or markdown:\n\n'
+    +'Sentence 1: State the '+selYr+' YTD net premium and whether it is up or down vs '+prevYr+' same period, with the exact dollar difference. If the % change is above 200%, explain this likely reflects more activity or accounts in '+selYr+' rather than pure income growth, and note the prior year amount was $'+ytdP.toFixed(0)+'.\n'
+    +'Sentence 2: Describe the month-to-month trend and name the best month with its amount.\n'
+    +'Sentence 3: State the full-year run rate of $'+runRate+' and compare it to '+prevYr+'\'s full year of $'+prevFull.toFixed(0)+'.\n\n'
+    +'Data ('+acctName+'):\n'
+    +selYr+' YTD through '+_irMoNames[upTo-1]+': $'+ytdC.toFixed(0)+' vs $'+ytdP.toFixed(0)+' in '+prevYr+' ('+(delta>=0?'+':'')+( pct!=null?pct+'%':'n/a')+')\n'
+    +'Monthly avg: $'+avgMo.toFixed(0)+' | Best month: '+(bestMo?_irMoNames[bestMo-1]+' $'+bestV.toFixed(0):'none')+'\n'
+    +'Months: '+moLines.join(' | ')+'\n\n'
+    +'Use second person. Be specific with dollar amounts. No markdown.';
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:220,messages:[{role:'user',content:prompt}]})
+  }).then(function(r){return r.json();}).then(function(d){
+    var t=(d.content||[]).map(function(b){return b.text||'';}).join('').trim();
+    el.style.fontStyle=''; el.style.color='var(--text2)';
+    el.textContent=t||_irFallback(selYr,prevYr,upTo,ytdC,delta,pct,avgMo,bestMo,bestV,fmtIR,fmtS);
+  }).catch(function(){
+    el.style.fontStyle=''; el.style.color='var(--text2)';
+    el.textContent=_irFallback(selYr,prevYr,upTo,ytdC,delta,pct,avgMo,bestMo,bestV,fmtIR,fmtS);
+  });
+}
+
+function _irFallback(selYr,prevYr,upTo,ytdC,delta,pct,avgMo,bestMo,bestV,fmtIR,fmtS){
+  function fmtIR2(n){return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  var dir=delta>=0?'up':'down';
+  var priorCtx=pct!=null?(Math.abs(pct)>300
+    ?' ('+prevYr+' had only '+fmtIR2(ytdC-delta)+' — likely partial data)'
+    :' ('+(pct>=0?'+':'')+pct+'% vs '+prevYr+')'):'';
+  return selYr+' YTD net premium is '+fmtIR2(ytdC)+', '+dir+' '+fmtIR2(Math.abs(delta))+priorCtx+' vs the same '+upTo+' months in '+prevYr+'. '
+    +'Monthly average is '+fmtIR2(avgMo)+(bestMo?' with '+_irMoNames[bestMo-1]+' being the strongest month at '+fmtIR2(bestV):'')+'.'
+    +' Run rate suggests a full-year total around '+fmtIR2(Math.round(ytdC/upTo*12))+'.';
+}
+
+function irToggleDetail(m){
+  if(_irSelMo===m){irCloseDetail();return;}
+  _irSelMo=m;
+  var acct=($d('ir-acct')||{}).value||'ALL';
+  var selYr=parseInt(($d('ir-yr')||{}).value)||new Date().getFullYear();
+  var prevYr=selYr-1;
+  var dt=$d('ir-detail'), dtTitle=$d('ir-dp-title'), dtBody=$d('ir-dp-body');
+  if(!dt||!dtTitle||!dtBody) return;
+  dtTitle.textContent=_irMoNames[m-1]+' '+selYr+' — ticker breakdown vs '+prevYr;
+  var tkC=(_irByYMTk[String(selYr)]||{})[m]||{};
+  var tkP=(_irByYMTk[String(prevYr)]||{})[m]||{};
+  var allTks=[];
+  Object.keys(tkC).forEach(function(k){if(allTks.indexOf(k)<0)allTks.push(k);});
+  Object.keys(tkP).forEach(function(k){if(allTks.indexOf(k)<0)allTks.push(k);});
+  allTks=allTks.filter(function(tk){
+    if(acct==='ALL')return true;
+    var tkAcct=(tkC[tk]||tkP[tk]||{}).acct||'__untagged__';
+    return tkAcct===acct||tkAcct==='__untagged__';
+  }).sort(function(a,b){
+    var na=r2((tkC[a]&&tkC[a].in||0)-(tkC[a]&&tkC[a].out||0));
+    var nb=r2((tkC[b]&&tkC[b].in||0)-(tkC[b]&&tkC[b].out||0));
+    return nb-na;
+  });
+  function fmtD(n){return (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  var rowStyle='display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:7px 14px;border-top:1px solid var(--border2);font-size:12px';
+  if(!allTks.length){
+    dtBody.innerHTML='<div style="'+rowStyle+';color:var(--text3)"><div>No data for this month.</div></div>';
+  } else {
+    dtBody.innerHTML='<div style="'+rowStyle+';background:var(--bg2);font-weight:600;border-top:none"><div>Ticker</div><div>'+selYr+' net</div><div>'+prevYr+' net</div><div>Change</div></div>'+
+    allTks.map(function(tk){
+      var cv=r2((tkC[tk]&&tkC[tk].in||0)-(tkC[tk]&&tkC[tk].out||0));
+      var pv=r2((tkP[tk]&&tkP[tk].in||0)-(tkP[tk]&&tkP[tk].out||0));
+      var dv=r2(cv-pv);
+      return '<div style="'+rowStyle+'">'
+        +'<div style="font-weight:600">'+tk+'</div>'
+        +'<div>'+(cv>0?fmtD(cv):'<span style="color:var(--text3)">—</span>')+'</div>'
+        +'<div style="color:var(--text3)">'+(pv>0?fmtD(pv):'—')+'</div>'
+        +'<div style="color:'+(dv>0?'var(--green)':dv<0?'#e55':'var(--text3)')+'">'+(cv>0||pv>0?(dv>=0?'+':'')+fmtD(dv):'—')+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  dt.style.display='block';
+  renderIncomeReport();
+}
+
+function irCloseDetail(){_irSelMo=null;var dt=$d('ir-detail');if(dt)dt.style.display='none';renderIncomeReport();}
+// ==============================
 </script>
 </body>
 </html>
